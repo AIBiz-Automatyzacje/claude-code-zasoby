@@ -12,7 +12,7 @@ allowed-tools: Bash(ls:*), Bash(cat:*), Read, Write, Task
 - LICZBA_WORKTREES: $3
 
 ## Walidacja wstępna
-- Sprawdź czy worktrees istnieją: `ls -la![alt text](image.png) trees/ 2>/dev/null || echo "BRAK KATALOGU trees/"`
+- Sprawdź czy worktrees istnieją: `ls -la trees/ 2>/dev/null || echo "BRAK KATALOGU trees/"`
 - Sprawdź czy plan istnieje: `cat $2 2>/dev/null | head -10 || echo "PLAN NIE ZNALEZIONY"`
 
 ## Instrukcje
@@ -20,7 +20,13 @@ allowed-tools: Bash(ls:*), Bash(cat:*), Read, Write, Task
 1. **Przeczytaj plan** z `$2`
 
 2. **Uruchom równoległych agentów**:
-   Dla każdego numeru od 1 do $3 utwórz subagenta (narzędzie Task):
+   Dla każdego numeru od 1 do $3 utwórz subagenta używając narzędzia Task z parametrem:
+
+   ```
+   subagent_type: parallel-developer
+   ```
+
+   **WAŻNE:** Użyj agenta `parallel-developer` który ma uprawnienia do Write/Edit/Bash.
 
    **Przykład dla $1="auth-refaktor" i $3=3:**
    - Agent 1 → pracuje w `trees/auth-refaktor-1/`
@@ -30,9 +36,9 @@ allowed-tools: Bash(ls:*), Bash(cat:*), Read, Write, Task
    **Instrukcje dla każdego agenta:**
 ```
    Twój workspace: trees/$1-{numer}/
-   
+
    Zadanie: Zaimplementuj plan z $2 w tym workspace.
-   
+
    Zasady:
    - Pracuj TYLKO w swoim workspace
    - NIE uruchamiaj testów ani innego kodu
