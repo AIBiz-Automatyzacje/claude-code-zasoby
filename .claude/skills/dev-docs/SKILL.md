@@ -1,7 +1,8 @@
 ---
-description: Tworzenie kompleksowego planu strategicznego z uporządkowanym podziałem na zadania
-argument-hint: Opisz co wymaga zaplanowania (np. "refaktoryzacja systemu uwierzytelniania", "wdrożenie mikroserwisów")
-allowed-tools: Bash(mkdir:*), Bash(find:*), Bash(ls:*), Bash(git:*), Read, Write
+name: dev-docs
+description: "Tworzenie kompleksowego planu strategicznego z uporządkowanym podziałem na zadania."
+argument-hint: "[opis zadania np. 'refaktoryzacja systemu uwierzytelniania']"
+disable-model-invocation: true
 ---
 
 Jesteś elitarnym specjalistą ds. planowania strategicznego. Stwórz kompleksowy, wykonalny plan dla: $ARGUMENTS
@@ -23,9 +24,16 @@ Jesteś elitarnym specjalistą ds. planowania strategicznego. Stwórz kompleksow
 
 ### Faza 1: Analiza i planowanie
 
-1. **Przeanalizuj zapytanie** i określ zakres potrzebnego planowania
-2. **Zbadaj odpowiednie pliki** w bazie kodu, aby zrozumieć obecny stan
-3. **Stwórz uporządkowany plan** zawierający:
+1. **Szukaj istniejących dokumentów źródłowych:**
+   - Sprawdź `docs/brainstorms/*-requirements.md` — requirements doc z `/dev-brainstorm`
+   - Sprawdź `docs/plans/*-plan.md` — plan techniczny z `/dev-plan`
+   - Jeśli plan techniczny istnieje → użyj Implementation Units jako bazowych zadań w Fazie 2
+   - Jeśli requirements doc istnieje → użyj jako kontekst produktowy (cele, wymagania, granice scope'u)
+   - Jeśli żaden nie istnieje → kontynuuj standardowo
+
+2. **Przeanalizuj zapytanie** i określ zakres potrzebnego planowania
+3. **Zbadaj odpowiednie pliki** w bazie kodu, aby zrozumieć obecny stan
+4. **Stwórz uporządkowany plan** zawierający:
    - Podsumowanie wykonawcze
    - Analiza obecnego stanu
    - Proponowany stan docelowy
@@ -62,6 +70,14 @@ Jesteś elitarnym specjalistą ds. planowania strategicznego. Stwórz kompleksow
    - Decyzje techniczne
    - Zależności
 
+   **W obu plikach (`[nazwa-zadania]-plan.md` i `[nazwa-zadania]-kontekst.md`) dodaj sekcję:**
+
+   ```markdown
+   ## Źródła
+   - Requirements doc: [ścieżka do docs/brainstorms/*.md jeśli użyty]
+   - Plan techniczny: [ścieżka do docs/plans/*.md jeśli użyty]
+   ```
+
    **`[nazwa-zadania]-zadania.md`** — Format checklisty do śledzenia postępów
 
 3. **Dodaj w każdym pliku:**
@@ -85,6 +101,8 @@ Jesteś elitarnym specjalistą ds. planowania strategicznego. Stwórz kompleksow
 - Skonsultuj `.claude/rules/best-practices.md` dla standardów kodowania (jeśli istnieje)
 - Odwołaj się do `.claude/rules/troubleshooting.md` dla typowych problemów do uniknięcia (jeśli istnieje)
 - Użyj `dev/README.md` dla wytycznych zarządzania zadaniami (jeśli istnieje)
+- Sprawdź `docs/brainstorms/` dla dokumentów wymagań z `/dev-brainstorm`
+- Sprawdź `docs/plans/` dla planów technicznych z `/dev-plan`
 
 ## Format wyjściowy
 ```

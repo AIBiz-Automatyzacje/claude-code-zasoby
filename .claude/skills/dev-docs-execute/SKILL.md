@@ -1,7 +1,8 @@
 ---
-description: Kontynuacja pracy nad zadaniem - wykonanie kolejnej fazy/etapu
-argument-hint: [ścieżka-do-folderu] (np. "dev/active/auth-refaktor", "dev/active/workflow-view-ux")
-allowed-tools: Bash(find:*), Bash(ls:*), Bash(mkdir:*), Bash(git:*), Read, Write, Task
+name: dev-docs-execute
+description: "Kontynuacja pracy nad zadaniem - wykonanie kolejnej fazy/etapu."
+argument-hint: "[ścieżka-do-folderu np. 'dev/active/auth-refaktor']"
+disable-model-invocation: true
 ---
 
 # Wykonanie kolejnej fazy zadania
@@ -31,7 +32,18 @@ Na podstawie pliku z zadaniami:
 - Zidentyfikuj NASTĘPNĄ fazę/etap do wykonania
 - Jeśli wszystko ukończone → poinformuj użytkownika i zakończ
 
+### 2.5 Wybór strategii wykonania
+Na podstawie liczby i zależności zadań w fazie, zdecyduj:
+- **Inline** (1-2 taski, mały scope) — wykonaj bezpośrednio w tej sesji
+- **Serial subagents** (3+ zadań z zależnościami) — uruchom Task dla każdego zadania sekwencyjnie, każdy sub-agent dostaje świeży kontekst
+- **Parallel subagents** (3+ niezależnych zadań) — uruchom Task równolegle dla zadań bez wspólnych zależności i plików
+
+Dla prostych faz (1-2 zadania) zawsze wybierz Inline.
+
 ### 3. Wykonaj TYLKO JEDNĄ fazę
+- Sprawdź czy w planie (`docs/plans/`) lub w pliku z planem zadania istnieje sekcja "Granice scope'u" / "Poza zakresem"
+- Jeśli tak → przeczytaj ją i NIE implementuj niczego co jest tam wymienione, nawet jeśli wydaje się przydatne
+- Jeśli zadanie wymaga pracy poza zakresem → STOP, poinformuj użytkownika
 - Realizuj zadania z kolejnej fazy/etapu
 - NIE przechodź do następnych faz
 - Zatrzymaj się po ukończeniu tej jednej fazy
@@ -41,6 +53,16 @@ Po zakończeniu fazy:
 - Sprawdź czy w planie są zdefiniowane testy akceptacyjne dla tej fazy
 - Jeśli tak → wykonaj je
 - Zapisz wyniki testów i zrzuty ekranu w `$1/`
+
+### 4.5 System-Wide Test Check
+Przed zamknięciem fazy odpowiedz na 5 pytań:
+1. Czy typecheck przechodzi bez nowych błędów?
+2. Czy istniejące testy nadal przechodzą?
+3. Czy nowe testy pokrywają happy path i przynajmniej jeden error case?
+4. Czy nowe importy nie łamią istniejących modułów?
+5. Czy build przechodzi?
+
+Jeśli odpowiedź na którekolwiek pytanie to NIE — napraw przed kontynuacją.
 
 ### 5. Aktualizuj dokumentację
 **W pliku z zadaniami:**
@@ -52,11 +74,20 @@ Po zakończeniu fazy:
 - Zapisz podjęte decyzje
 - Zaktualizuj "Ostatnia aktualizacja: RRRR-MM-DD"
 
-### 6. Commit zmian
-Po ukończeniu fazy wykonaj commit:
-1. `git add .` (lub wybrane pliki)
-2. `git commit -m "feat([nazwa-zadania]): [krótki opis fazy]"`
-   - Przykład: `feat(auth-refaktor): implementacja fazy 2 - walidacja formularzy`
+### 5.5 Aktualizacja planu technicznego
+Jeśli istnieje plan techniczny w `docs/plans/`:
+- Znajdź Implementation Unit odpowiadający ukończonej fazie
+- Zaktualizuj checkboxy test scenarios (odznacz spełnione)
+- Zaktualizuj checkboxy verification (odznacz spełnione)
+- Plan staje się żywym dokumentem śledzenia postępu
+
+### 6. Commit zmian (inkrementalny)
+Heurystyka: commituj gdy możesz napisać sensowny commit message opisujący kompletną zmianę.
+- Nie czekaj do końca fazy — commituj logiczne jednostki pracy
+- Jeśli commit message brzmiałby "WIP" lub "partial" — nie commituj jeszcze
+- Pattern: `feat/fix/refactor([nazwa-zadania]): [co i dlaczego]`
+- Jedna faza może mieć wiele commitów lub jeden — zależy od złożoności
+- Staguj tylko pliki związane z daną jednostką pracy (nie `git add .`)
 
 ### 7. Przygotuj podsumowanie
 Napisz podsumowanie w **prostym języku** zrozumiałym dla osoby nietechnicznej:

@@ -1,7 +1,8 @@
 ---
-description: Aktualizacja dokumentacji dev przed kompaktowaniem kontekstu
-argument-hint: Opcjonalnie - konkretny kontekst lub zadania do uwzględnienia (puste dla kompleksowej aktualizacji)
-allowed-tools: Bash(find:*), Bash(ls:*), Bash(cat:*), Bash(git:*), Read, Write
+name: dev-docs-update
+description: "Aktualizacja dokumentacji dev przed kompaktowaniem kontekstu."
+argument-hint: "[ścieżka-do-folderu] [opcjonalnie: co zaktualizować]"
+disable-model-invocation: true
 ---
 
 Zbliżamy się do limitu kontekstu. Zaktualizuj dokumentację deweloperską, aby zapewnić płynną kontynuację po resecie kontekstu.
@@ -38,7 +39,7 @@ Dla każdego zadania w `dev/active/[nazwa-zadania]/`:
 - Znacznik "Ostatnia aktualizacja: RRRR-MM-DD"
 
 **Zaktualizuj `[nazwa-zadania]-zadania.md`:**
-- Oznacz ukończone zadania jako ✅ 
+- Oznacz ukończone zadania jako ✅
 - Dodaj nowo odkryte zadania
 - Zaktualizuj status zadań w toku
 - Zmień priorytety jeśli potrzeba

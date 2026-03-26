@@ -1,7 +1,8 @@
 ---
-description: Archiwizacja ukończonego zadania i wyciągnięcie kluczowych wniosków
-argument-hint: Nazwa zadania z dev/active/ (np. "auth-refaktor", "nowy-dashboard")
-allowed-tools: Bash(mkdir:*), Bash(mv:*), Bash(rm:*), Bash(rmdir:*), Bash(find:*), Bash(ls:*), Read, Write
+name: dev-docs-complete
+description: "Archiwizacja ukończonego zadania i wyciągnięcie kluczowych wniosków."
+argument-hint: "[nazwa zadania z dev/active/]"
+disable-model-invocation: true
 ---
 
 Jesteś specjalistą ds. zamykania zadań. Zarchiwizuj i udokumentuj ukończone zadanie: $ARGUMENTS
@@ -35,6 +36,10 @@ Jesteś specjalistą ds. zamykania zadań. Zarchiwizuj i udokumentuj ukończone 
    - Dodaj nowe wzorce do `.claude/rules/best-practices.md`
    - Zaktualizuj `.claude/rules/troubleshooting.md` jeśli odkryto nowe pułapki
 
+5.5 **Sugestia dokumentowania problemów:**
+   - Jeśli podczas pracy napotkano nietrywialne problemy warte udokumentowania:
+   - Zapytaj: "Czy chcesz udokumentować rozwiązane problemy? Uruchom `/dev-compound`"
+
 6. **Posprzątaj**:
    - Usuń pusty katalog `dev/active/$ARGUMENTS/`
    - Potwierdź ukończenie użytkownikowi
@@ -51,4 +56,7 @@ Jesteś specjalistą ds. zamykania zadań. Zarchiwizuj i udokumentuj ukończone 
 
 🎯 Kluczowe rezultaty:
    - [krótkie punkty co zostało dostarczone]
-```/
+
+💡 Rozwiązane problemy warte udokumentowania?
+   → /dev-compound do zapisu rozwiązania
+```
