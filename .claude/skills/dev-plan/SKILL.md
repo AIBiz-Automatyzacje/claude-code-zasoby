@@ -2,7 +2,6 @@
 name: dev-plan
 description: "Planowanie techniczne implementacji z Implementation Units."
 argument-hint: "[opcjonalnie: ścieżka do requirements doc lub opis feature'a]"
-disable-model-invocation: true
 ---
 
 # Stwórz plan techniczny

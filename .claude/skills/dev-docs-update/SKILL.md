@@ -2,7 +2,6 @@
 name: dev-docs-update
 description: "Aktualizacja dokumentacji dev przed kompaktowaniem kontekstu."
 argument-hint: "[ścieżka-do-folderu] [opcjonalnie: co zaktualizować]"
-disable-model-invocation: true
 ---
 
 Zbliżamy się do limitu kontekstu. Zaktualizuj dokumentację deweloperską, aby zapewnić płynną kontynuację po resecie kontekstu.

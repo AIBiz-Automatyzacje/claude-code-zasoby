@@ -2,7 +2,6 @@
 name: dev-compound
 description: "Dokumentowanie rozwiązanego problemu do bazy wiedzy docs/solutions/."
 argument-hint: "[opcjonalnie: opis problemu lub --full]"
-disable-model-invocation: true
 ---
 
 # Compound — dokumentowanie rozwiązanego problemu

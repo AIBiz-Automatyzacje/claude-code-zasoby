@@ -10,10 +10,11 @@ Data utworzenia: 2026-03-24
 ```
 /dev-ideate → /dev-brainstorm → /dev-plan → /dev-docs → /dev-docs-execute ↔ /dev-docs-review → /dev-docs-complete → /dev-compound
                                                                                                                         ↓
+                                                       /dev-autopilot (orkiestruje execute↔review→complete→compound)
                                                                                                           /dev-compound-refresh
 ```
 
-Każdy skill ma `disable-model-invocation: true` — wywoływany TYLKO przez `/slash-command`.
+Skille dev-* mogą być wywoływane programowo przez inne skille i agenty (bez `disable-model-invocation`).
 Każdy skill działa BEZ argumentów (wyciąga kontekst z sesji). Argumenty są opcjonalne.
 
 ---
@@ -53,6 +54,14 @@ Każdy skill działa BEZ argumentów (wyciąga kontekst z sesji). Argumenty są 
 **Następny krok:** `/dev-docs-execute docs/active/[nazwa]`
 
 ### Faza implementacji
+
+#### `/dev-autopilot docs/active/[nazwa]`
+**Cel:** Automatyczne wykonanie WSZYSTKICH faz implementacji z review i naprawami.
+**Kiedy:** Masz gotową dokumentację w docs/active/ i chcesz uruchomić cały pipeline bez ręcznej interwencji.
+**Jak działa:** Czyta plan, buduje kolejkę faz. Per faza: spawnuje Agent → execute, Agent → review, Agent → fix (jeśli P1/P2, max 2 cykle). Po wszystkich fazach: complete + compound.
+**Output:** Zaimplementowany kod + archiwum w docs/completed/ + wpis w docs/solutions/
+**Resumability:** Ponowne wywołanie czyta stan z checkboxów i kontynuuje od ostatniej niekompletnej fazy.
+**Stop conditions:** P1 po 2 cyklach fix, błąd buildu/testów, git conflict.
 
 #### `/dev-docs-execute docs/active/[nazwa]`
 **Cel:** Wykonanie jednej fazy implementacji.
@@ -192,4 +201,16 @@ docs/
 ```
 /dev-compound-refresh                ← przejrzyj wszystkie docs/solutions/
 /dev-compound-refresh supabase-issues ← przejrzyj tylko jedną kategorię
+```
+
+### Scenariusz 5: Pełny autopilot
+```
+/dev-brainstorm lazy loading         ← doprecyzuj pomysł
+/dev-plan                            ← plan techniczny
+/dev-docs                            ← struktura zadań
+/dev-autopilot docs/active/lazy-loading   ← WSZYSTKO automatycznie:
+                                          execute fazy 1..N
+                                          review każdej fazy
+                                          fix jeśli P1/P2
+                                          complete + compound
 ```

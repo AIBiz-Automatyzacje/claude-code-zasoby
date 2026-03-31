@@ -2,7 +2,6 @@
 name: dev-docs
 description: "Tworzenie kompleksowego planu strategicznego z uporządkowanym podziałem na zadania."
 argument-hint: "[opis zadania np. 'refaktoryzacja systemu uwierzytelniania'] — tworzy docs/active/[nazwa]/"
-disable-model-invocation: true
 ---
 
 Jesteś elitarnym specjalistą ds. planowania strategicznego. Stwórz kompleksowy, wykonalny plan dla: $ARGUMENTS

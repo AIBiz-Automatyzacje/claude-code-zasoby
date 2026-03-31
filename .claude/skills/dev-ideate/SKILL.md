@@ -2,7 +2,6 @@
 name: dev-ideate
 description: "Multi-agent generowanie i filtrowanie pomyslow na ulepszenia projektu."
 argument-hint: "[opcjonalnie: temat, obszar lub ograniczenie]"
-disable-model-invocation: true
 ---
 
 # Generowanie pomyslow na ulepszenia

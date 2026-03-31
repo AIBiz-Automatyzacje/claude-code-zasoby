@@ -2,7 +2,6 @@
 name: dev-docs-review
 description: "Code review wykonanej fazy/etapu przez multi-agent analysis."
 argument-hint: "[ścieżka-do-folderu] [numer-fazy]"
-disable-model-invocation: true
 ---
 
 # Code Review fazy zadania

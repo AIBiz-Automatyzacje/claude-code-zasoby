@@ -2,7 +2,6 @@
 name: dev-docs-complete
 description: "Archiwizacja ukończonego zadania i wyciągnięcie kluczowych wniosków."
 argument-hint: "[nazwa zadania z docs/active/]"
-disable-model-invocation: true
 ---
 
 Jesteś specjalistą ds. zamykania zadań. Zarchiwizuj i udokumentuj ukończone zadanie: $ARGUMENTS

@@ -2,7 +2,6 @@
 name: dev-compound-refresh
 description: "Przegląd i odświeżanie bazy wiedzy docs/solutions/."
 argument-hint: "[opcjonalnie: kategoria do przejrzenia]"
-disable-model-invocation: true
 ---
 
 # Compound Refresh — przegląd i odświeżanie bazy wiedzy
