@@ -50,6 +50,7 @@ Jesteś elitarnym specjalistą ds. planowania strategicznego. Stwórz kompleksow
 - Dołącz jasne kryteria akceptacji dla każdego zadania
 - Określ zależności między zadaniami
 - Oszacuj poziom nakładu pracy (S/M/L/XL)
+- Jeśli plan techniczny (`docs/plans/`) zawiera w Implementation Units sekcje **Scenariusze testowe** i **Weryfikacja** — przenieś je jako checkboxy w checkliście zadań. Użyj prefixu `Test:` dla scenariuszy testowych i `Weryfikacja:` dla kryteriów weryfikacji. Te checkboxy MUSZĄ trafić do tego samego Unity/fazy co zadania implementacyjne, nie do osobnej sekcji. Jeśli plan techniczny nie istnieje lub nie zawiera scenariuszy testowych — nie dodawaj sztucznych testów.
 
 ### Faza 3: Utworzenie struktury zarządzania zadaniami
 
@@ -77,7 +78,13 @@ Jesteś elitarnym specjalistą ds. planowania strategicznego. Stwórz kompleksow
    - Plan techniczny: [ścieżka do docs/plans/*.md jeśli użyty]
    ```
 
-   **`[nazwa-zadania]-zadania.md`** — Format checklisty do śledzenia postępów
+   **`[nazwa-zadania]-zadania.md`** — Format checklisty do śledzenia postępów.
+   Dla każdego Unity/fazy checklist powinien zawierać:
+   1. Checkboxy implementacyjne (pliki do stworzenia/modyfikacji)
+   2. Checkboxy testowe z prefixem `Test:` (przeniesione z sekcji **Scenariusze testowe** planu technicznego)
+   3. Checkboxy weryfikacyjne z prefixem `Weryfikacja:` (przeniesione z sekcji **Weryfikacja** planu technicznego)
+
+   Jeśli plan techniczny nie istnieje lub nie zawiera scenariuszy testowych — pomiń punkty 2 i 3.
 
 3. **Dodaj w każdym pliku:**
    - "Branch: `feature/[nazwa-zadania]`"

@@ -43,6 +43,7 @@ Dla prostych faz (1-2 zadania) zawsze wybierz Inline.
 - Sprawdź czy w planie (`docs/plans/`) lub w pliku z planem zadania istnieje sekcja "Granice scope'u" / "Poza zakresem"
 - Jeśli tak → przeczytaj ją i NIE implementuj niczego co jest tam wymienione, nawet jeśli wydaje się przydatne
 - Jeśli zadanie wymaga pracy poza zakresem → STOP, poinformuj użytkownika
+- Jeśli checklist fazy zawiera checkboxy z prefixem `Test:` lub `Weryfikacja:` — traktuj je jako integralną część implementacji fazy. Napisz testy RAZEM z kodem implementacyjnym, nie odkładaj na koniec fazy
 - Realizuj zadania z kolejnej fazy/etapu
 - NIE przechodź do następnych faz
 - Zatrzymaj się po ukończeniu tej jednej fazy
@@ -58,6 +59,7 @@ Przed zamknięciem fazy odpowiedz na 5 pytań:
 1. Czy typecheck przechodzi bez nowych błędów?
 2. Czy istniejące testy nadal przechodzą?
 3. Czy nowe testy pokrywają happy path i przynajmniej jeden error case?
+3b. Czy checklist fazy zawierał checkboxy testowe (`Test:`)? Jeśli tak — czy odpowiadające testy zostały napisane i przechodzą? Jeśli nie zostały napisane — napisz je TERAZ przed zamknięciem fazy.
 4. Czy nowe importy nie łamią istniejących modułów?
 5. Czy build przechodzi?
 

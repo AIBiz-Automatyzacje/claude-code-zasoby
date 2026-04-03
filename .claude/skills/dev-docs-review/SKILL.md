@@ -29,6 +29,7 @@ Przeczytaj dokumentację zadania z `$1/`:
 Jeśli istnieje plan w `docs/plans/`:
 - Przeczytaj Implementation Unit odpowiadający tej fazie
 - Przekaż każdemu agentowi review: jakie pliki miały być zmienione (Files:), jakie testy miały być napisane (Test scenarios:), jakie wzorce miały być naśladowane (Patterns to follow:)
+- Sprawdź czy Implementation Unit definiował ścieżki plików testowych w sekcji **Pliki: Test:**. Jeśli tak — zweryfikuj czy te pliki istnieją. Brakujący plik testowy zdefiniowany w planie = 🟠 [P2-important] w raporcie "Odchylenia od planu"
 - Dodaj do raportu sekcję "Odchylenia od planu" jeśli implementacja różni się od planu
 
 Uruchom 4 agentów (Task) równolegle, każdy z inną perspektywą:
@@ -57,7 +58,7 @@ Skup się na: SOLID, wzorce, nazewnictwo, type safety, import organization.
 Klasyfikuj: 🔴 [P1-blocking], 🟠 [P2-important], 🟡 [P3-nit]
 ```
 
-**Agent 4: Scenario Exploration**
+**Agent 4: Scenario Exploration & Test Coverage**
 ```
 Jesteś tester scenariuszy. Dla zmian z fazy $2 w folderze $1, sprawdź:
 - [ ] Happy path — główny flow działa poprawnie
@@ -65,6 +66,9 @@ Jesteś tester scenariuszy. Dla zmian z fazy $2 w folderze $1, sprawdź:
 - [ ] Boundary conditions — puste listy, max wartości, null/undefined
 - [ ] Concurrent operations — race conditions, optimistic updates
 - [ ] Scale — co jeśli 100x więcej danych?
+- [ ] Test coverage — czy plan techniczny definiował scenariusze testowe
+  dla tej fazy? Jeśli tak, czy odpowiadające pliki testowe istnieją
+  i zawierają asercje? Brakujące testy = 🟠 [P2-important].
 Klasyfikuj znalezione problemy: 🔴 [P1-blocking], 🟠 [P2-important], 🟡 [P3-nit]
 ```
 
