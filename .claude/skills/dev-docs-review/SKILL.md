@@ -104,6 +104,12 @@ Na podstawie skonsolidowanego raportu:
 - **Jeśli tylko P2 (important):** "⚠️ KONTYNUUJ Z ZASTRZEŻENIAMI — X problemów P2 do naprawy"
 - **Jeśli tylko P3 (nit):** "✅ GOTOWE DO KONTYNUACJI — X sugestii do rozważenia"
 
+### 4.6 Rekomendacja E2E (opcjonalna)
+Jeśli faza modyfikowała komponenty UI, strony lub ścieżki użytkownika, a plan techniczny zawierał scenariusze `[E2E]` lub `Test (e2e):`:
+- Dodaj do podsumowania: "🌐 Zalecane: uruchom `/agent-browser` dla weryfikacji zmian UI w przeglądarce (otwórz stronę, snapshot, przetestuj flow, screenshot)"
+- Wylistuj konkretne scenariusze E2E z planu do przetestowania
+- NIE blokuj kontynuacji — to rekomendacja, nie wymóg
+
 ### 5. Przedstaw podsumowanie użytkownikowi
 
 ## Format wyjściowy

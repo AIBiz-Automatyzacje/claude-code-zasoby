@@ -275,10 +275,10 @@ Dla każdego unitu dołącz:
 - **Podejście** — kluczowe decyzje, przepływ danych, granice komponentów lub notatki integracyjne
 - **Notatka wykonawcza** — opcjonalna, tylko gdy unit korzysta z niestandardowej postawy wykonawczej jak test-first lub characterization-first
 - **Wzorce do naśladowania** — istniejący kod lub konwencje do odwzorowania
-- **Scenariusze testowe** — konkretne zachowania, edge cases i ścieżki awarii do pokrycia
+- **Scenariusze testowe** — konkretne zachowania, edge cases i ścieżki awarii do pokrycia. Rozróżniaj typy: `[Unit]` dla testów kodu, `[E2E]` dla scenariuszy do weryfikacji w przeglądarce przez `/agent-browser`
 - **Weryfikacja** — jak implementator powinien wiedzieć że unit jest ukończony, wyrażona jako oczekiwane wyniki a nie skrypty komend shellowych
 
-Każdy feature-bearing unit powinien zawierać ścieżkę pliku testowego w `**Pliki:**`.
+Każdy feature-bearing unit powinien zawierać ścieżkę pliku testowego w `**Pliki:**`. Dla unitów modyfikujących komponenty UI lub ścieżki użytkownika — dołącz scenariusze `[E2E]` opisujące flow do przetestowania przez `/agent-browser` (otwórz URL, zrób snapshot, kliknij X, sprawdź Y, zrób screenshot).
 
 Używaj `Notatka wykonawcza` oszczędnie. Dobre użycia:
 - `Notatka wykonawcza: Zacznij od failing integration testu dla kontraktu request/response.`
@@ -406,7 +406,8 @@ origin: docs/brainstorms/YYYY-MM-DD-<topic>-requirements.md  # dołącz gdy plan
 **Pliki:**
 - Stwórz: `ścieżka/do/nowego_pliku`
 - Modyfikuj: `ścieżka/do/istniejącego_pliku`
-- Test: `ścieżka/do/pliku_testowego`
+- Test (unit): `ścieżka/do/pliku_testowego`
+- Test (e2e): `Scenariusz: [opis flow do weryfikacji przez /agent-browser]`
 
 **Podejście:**
 - [Kluczowa decyzja designu lub sekwencjonowania]
@@ -417,8 +418,9 @@ origin: docs/brainstorms/YYYY-MM-DD-<topic>-requirements.md  # dołącz gdy plan
 - [Istniejący plik, klasa lub wzorzec]
 
 **Scenariusze testowe:**
-- [Konkretny scenariusz z oczekiwanym zachowaniem]
-- [Edge case lub ścieżka awarii]
+- [Unit] [Konkretny scenariusz z oczekiwanym zachowaniem]
+- [Unit] [Edge case lub ścieżka awarii]
+- [E2E] [Flow do weryfikacji przez /agent-browser: otwórz URL, kliknij X, sprawdź Y]
 
 **Weryfikacja:**
 - [Wynik który powinien być prawdziwy gdy unit jest ukończony]

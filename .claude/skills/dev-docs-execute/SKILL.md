@@ -110,6 +110,10 @@ Napisz podsumowanie w **prostym języku** zrozumiałym dla osoby nietechnicznej:
 
 ### Następny krok
 [Jaka faza/etap jest następny]
+
+### Weryfikacja E2E (jeśli dotyczy)
+[Jeśli checklist fazy zawierał scenariusze `Test (e2e):` — wylistuj je tutaj]
+Uruchom: `/agent-browser` do weryfikacji UI w przeglądarce
 ```
 
 ## Format wyjściowy
