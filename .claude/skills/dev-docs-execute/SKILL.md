@@ -138,6 +138,6 @@ Napisz podsumowanie w **prostym języku** zrozumiałym dla osoby nietechnicznej:
 
 ---
 
-➡️ Następna faza: [nazwa/numer]
-   Uruchom ponownie: /dev-docs-execute $1
+➡️ Review ukończonej fazy:
+   Uruchom: /dev-docs-review $1 Faza [numer]
 ```
