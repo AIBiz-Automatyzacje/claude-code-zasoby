@@ -61,7 +61,7 @@ Autonomicznie wykonuje wszystkie fazy zadania: execute -> review -> fix -> naste
 
 ### Faza 1: Petla Execute -> Review -> Fix
 
-Dla KAZDEJ fazy z kolejki, wykonaj ponizsze kroki sekwencyjnie.
+**AUTONOMICZNOSC:** Dla KAZDEJ fazy z kolejki, wykonaj ponizsze kroki sekwencyjnie. NIGDY nie pytaj usera o kontynuacje miedzy krokami (1a->1b->1c->1d->1e). Po zakonczeniu jednego kroku NATYCHMIAST przejdz do nastepnego. Jedyny powod do zatrzymania sie to STOP w obsludze bledow.
 
 **Na poczatku kazdej nowej fazy:**
 1. `fix_cykl = 0` — zresetuj licznik cykli naprawczych (lokalny dla fazy)
@@ -146,7 +146,13 @@ Review Fazy {AKTUALNA_FAZA.numer}: {X}x P1, {Y}x P2, {Z}x P3
 
 Przeczytaj plik `$1/review-faza-{AKTUALNA_FAZA.numer}.md` i `$1/*-zadania.md`.
 
-Policz findings wg severity:
+**Krok 1: Weryfikacja kompletnosci E2E.**
+Sprawdz czy w `$1/*-zadania.md` zostaly NIEZAZNACZONE checkboxy `Weryfikacja:` dla biezacej fazy.
+Jesli tak — sprawdz czy raport review zawiera findings dla tych checkboxow:
+- Jesli review je zawiera (PASS lub FAIL) → OK, policz severity normalnie
+- Jesli review NIE zawiera tych checkboxow (Agent 5 je pominil/skipnal/nie uruchomil sie) → **Dodaj kazdy brakujacy checkbox jako P2** z opisem: `🟠 [P2-important] 🌐 Weryfikacja: "{tresc checkboxa}" — pominiety przez review (Agent 5 nie uruchomiony)`
+
+**Krok 2: Policz findings wg severity (lacznie z dodanymi w kroku 1):**
 - **Sa P1 (blocking):** -> przejdz do kroku 1d (Fix)
 - **Tylko P2 (important):** -> przejdz do kroku 1d (Fix)
 - **Tylko P3 (nit) lub brak:** -> przejdz do nastepnej fazy (krok 1e)
@@ -469,6 +475,7 @@ Problemy wymagajace uwagi: {lista lub "brak"}
 | Brak faz do wykonania | Przeskocz do Fazy 2 (complete/compound). |
 | Skill tool nie dziala w Agent | FALLBACK: Agent czyta `.claude/skills/{nazwa}/SKILL.md` i wykonuje instrukcje bezposrednio. |
 | E2E Agent 5 zwraca FAIL | Traktuj jako P2. Fix agent musi re-uruchomic agent-browser po naprawie kodu i zweryfikowac wizualnie przed odznaczeniem checkboxa. |
+| E2E Agent 5 SKIP / nie uruchomiony (brak dev server, env error) | Orkiestrator w kroku 1c MUSI wykryc niezaznaczone checkboxy Weryfikacja: i dodac kazdy jako P2. Agent 5 SKIP != brak problemow — to niezweryfikowane wymagania. |
 
 ## Fallback: Jesli Skill tool nie dziala w Agent
 
