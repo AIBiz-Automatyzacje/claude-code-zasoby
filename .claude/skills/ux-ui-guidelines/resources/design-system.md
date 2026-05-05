@@ -362,6 +362,10 @@ font-family: "Inter", system-ui, -apple-system, sans-serif;
 <h3>Sekcja</h3>  // Błąd - pominięty h2!
 ```
 
+### Polish detale typografii
+
+Dla detali renderingu (text-wrap balance/pretty, font-smoothing macOS, tabular-nums dla dynamicznych liczb) → [typography-polish.md](typography-polish.md).
+
 ---
 
 ## Spacing
@@ -425,6 +429,8 @@ font-family: "Inter", system-ui, -apple-system, sans-serif;
 <Dialog className="rounded-xl" />
 ```
 
+**Concentric radius (zagnieżdżone elementy):** outer = inner + padding. Niedopasowane radii to częsta przyczyna "off feel" → [surfaces.md](surfaces.md).
+
 ---
 
 ## Shadows
@@ -468,6 +474,10 @@ shadow-2xl  // Maximum
         0 1px 3px 0 oklch(0.55 0.25 264 / 0.1);
 }
 ```
+
+### Shadow-as-border pattern
+
+Dla kart i przycisków preferuj 3-warstwowy `box-shadow` zamiast solidnego bordera (cienie adaptują się do tła, bordery nie) → [surfaces.md](surfaces.md).
 
 ---
 
@@ -647,3 +657,6 @@ import { Search, Plus, ChevronRight, Loader2 } from 'lucide-react';
 - [accessibility.md](accessibility.md) - Contrast ratios
 - [responsive-design.md](responsive-design.md) - Responsive spacing
 - [animations.md](animations.md) - Transitions
+- [typography-polish.md](typography-polish.md) - text-wrap, font-smoothing, tabular-nums
+- [surfaces.md](surfaces.md) - concentric radius, shadow-as-border, image outlines, hit area
+- [polish-checklist.md](polish-checklist.md) - 16 pryncypiów + checklista review

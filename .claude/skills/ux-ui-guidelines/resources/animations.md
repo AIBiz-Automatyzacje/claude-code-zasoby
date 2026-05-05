@@ -203,13 +203,15 @@ function TemplateGrid({ templates }: { templates: Template[] }) {
 ```typescript
 <motion.button
     whileHover={{ scale: 1.02 }}
-    whileTap={{ scale: 0.98 }}
+    whileTap={{ scale: 0.96 }}
     transition={{ duration: 0.1 }}
     className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
 >
     Kliknij
 </motion.button>
 ```
+
+**Dlaczego `0.96`, nie `0.98`?** `0.96` to standard polish dla scale-on-press — daje wyczuwalny tactile feedback bez przesady. Wartości poniżej `0.95` wyglądają przesadnie. Pełne pryncypia + warianty (Tailwind, CSS, prop `static`) → [animation-polish.md](animation-polish.md).
 
 ### Tylko na Desktop (hover: hover)
 ```typescript
@@ -708,3 +710,5 @@ transition={{ duration: 0.3 }}  // modals
 - [accessibility.md](accessibility.md) - Reduced motion
 - [component-ux.md](component-ux.md) - Loading states
 - [responsive-design.md](responsive-design.md) - Responsive animations
+- [animation-polish.md](animation-polish.md) - Interruptible transitions, subtelne wyjścia, contextual icon crossfade, scale on press
+- [performance.md](performance.md) - Transition specificity, `will-change` usage

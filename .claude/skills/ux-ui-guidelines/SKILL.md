@@ -1,6 +1,6 @@
 ---
 name: ux-ui-guidelines
-description: Wytyczne UX/UI dla React 19 + Tailwind v4. Design system (OKLCH colors), dostępność (WCAG 2.2, ARIA), responsive design (mobile-first, container queries), animacje (Motion, View Transitions, prefers-reduced-motion), UI patterns (navigation, tables, search, onboarding). Używaj przy projektowaniu UI, dostępności, animacjach, mobile UX.
+description: Wytyczne UX/UI dla React 19 + Tailwind v4. Design system (OKLCH colors), dostępność (WCAG 2.2, ARIA), responsive design (mobile-first, container queries), animacje (Motion, View Transitions, prefers-reduced-motion), UI patterns (navigation, tables, search, onboarding), interface polish (concentric radius, optical alignment, tabular numbers, scale 0.96 on press, font smoothing, image outlines, interruptible animations, shadow-as-border). Używaj przy projektowaniu UI, dostępności, animacjach, mobile UX oraz micro-detalach polish — "feels off", "interface polish", "border radius polish", "stagger animations", "tabular numbers", "scale on press".
 ---
 
 # UX/UI Guidelines
@@ -34,6 +34,10 @@ Przewodnik dla projektowania interfejsu użytkownika - design system, dostępno�
 - [ ] Contrast ratio min 4.5:1 (WCAG AA)
 - [ ] Dynamic viewport units (`min-h-dvh`)
 - [ ] `<search>` element dla obszarów wyszukiwania
+- [ ] Concentric border radius na zagnieżdżonych elementach (outer = inner + padding)
+- [ ] `tabular-nums` na dynamicznych liczbach (licznik, timer, cena)
+- [ ] `active:scale-[0.96]` na klikalnych przyciskach (gdzie sensowne)
+- [ ] Konkretne `transition-property`, nigdy `transition: all`
 
 ### Checklist Formularza
 
@@ -217,6 +221,26 @@ function handleNavigation() {
 
 ---
 
+### Interface Polish
+
+Micro-detale, które sprawiają, że interfejs wygląda dopracowany — uzupełnia macro UX patterns o szczegóły renderingu i micro-interakcje.
+
+**Główne kategorie:**
+- **Typography polish** — text-wrap balance/pretty, font-smoothing macOS, tabular-nums dla dynamicznych liczb
+- **Surfaces** — concentric border radius, optical alignment ikon, shadow-as-border, image outlines, minimum hit area 40×40px
+- **Animation polish** — interruptible CSS transitions vs keyframes, subtelne wyjścia, contextual icon crossfade, `scale(0.96)` on press
+- **Performance** — nigdy `transition: all`, `will-change` oszczędnie i tylko dla transform/opacity/filter
+
+**Quick wins:**
+- `tabular-nums` na każdym liczniku/timerze/cenie → zero layout shift
+- `text-wrap: balance` na h1-h3 → zero osieroconych słów w nagłówkach
+- `active:scale-[0.96]` na przyciskach → tactile feedback
+- Concentric radius na zagnieżdżonych kartach → eliminuje "off" feel
+
+**[Pełne Pryncypia: resources/polish-checklist.md](resources/polish-checklist.md)**
+
+---
+
 ## Przykład: Komponent Button (2026)
 ```typescript
 import { useTransition } from 'react';
@@ -272,6 +296,11 @@ export function ActionButton({ onClick, children, disabled }: ActionButtonProps)
 | Motion, View Transitions | [animations.md](resources/animations.md) |
 | Modale, formularze, feedback | [component-ux.md](resources/component-ux.md) |
 | Tabs, breadcrumbs, tables, search, onboarding | [patterns.md](resources/patterns.md) |
+| Concentric radius, optical alignment, shadow-as-border, image outlines, hit area | [surfaces.md](resources/surfaces.md) |
+| Interruptible animations, subtelne wyjścia, icon crossfade, scale on press | [animation-polish.md](resources/animation-polish.md) |
+| text-wrap balance/pretty, font smoothing, tabular nums | [typography-polish.md](resources/typography-polish.md) |
+| Transition specificity, `will-change` usage | [performance.md](resources/performance.md) |
+| 16 pryncypiów polish + checklista review | [polish-checklist.md](resources/polish-checklist.md) |
 
 ---
 
@@ -288,6 +317,10 @@ export function ActionButton({ onClick, children, disabled }: ActionButtonProps)
 9. **View Transitions** dla nawigacji (z fallbackiem)
 10. **Popover API** dla tooltipów i non-modal popovers (natywny)
 11. **`<search>` element** zamiast `role="search"`
+12. **Concentric radius** — outer = inner + padding na zagnieżdżonych powierzchniach
+13. **Tabular numbers** — `font-variant-numeric: tabular-nums` na dynamicznych liczbach
+14. **Specyficzne transitions** — nigdy `transition: all`, zawsze konkretne properties
+15. **Scale on press** — `0.96` (nigdy poniżej `0.95`) dla tactile feedback
 
 ---
 
