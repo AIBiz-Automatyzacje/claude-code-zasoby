@@ -31,21 +31,36 @@ Na podstawie pliku z zadaniami:
 - Zidentyfikuj NASTĘPNĄ fazę/etap do wykonania
 - Jeśli wszystko ukończone → poinformuj użytkownika i zakończ
 
-### 2.5 Wybór strategii wykonania
-Na podstawie liczby i zależności zadań w fazie, zdecyduj:
-- **Inline** (1-2 taski, mały scope) — wykonaj bezpośrednio w tej sesji
-- **Serial subagents** (3+ zadań z zależnościami) — uruchom Task dla każdego zadania sekwencyjnie, każdy sub-agent dostaje świeży kontekst
-- **Parallel subagents** (3+ niezależnych zadań) — uruchom Task równolegle dla zadań bez wspólnych zależności i plików
+### 2.5 Strategia delegacji do subagentów
 
-Dla prostych faz (1-2 zadania) zawsze wybierz Inline.
+KAŻDY Implementation Unit z fazy MUSI być wykonany przez subagenta zadeklarowanego w polu `Delegate to:` w planie technicznym. NIE implementuj IU samodzielnie poza fallbackiem opisanym niżej.
+
+**Krok 1 — Wczytaj plan techniczny.** Otwórz plan w `docs/plans/` (referencja w pliku z planem zadania jako `Plan techniczny:` lub `origin:`). Zlokalizuj IU odpowiadające bieżącej fazie.
+
+**Krok 2 — Wybierz strategię orkiestracji** (to jest strategia jak orkiestrować delegacje, NIE strategia implementacji — implementacją zajmuje się subagent):
+
+- **Serial** (domyślne) — IU mają zależności między sobą lub modyfikują wspólne pliki. Wywołuj Agent tool dla każdego IU sekwencyjnie: czekaj na raport, weryfikuj status, kontynuuj do kolejnego.
+- **Parallel** — IU są niezależne (różne pliki, brak współdzielonego stanu, brak ordering constraint). Wywołuj Agent tool dla wszystkich IU naraz w jednym multi-call (kilka tool uses w jednej wiadomości).
+- **Inline fallback** — TYLKO gdy IU nie ma `Delegate to:` (legacy plan sprzed reformy delegacji) lub jest trywialny (literówka w stringu, zmiana jednej stałej). W każdym innym przypadku NIE używaj inline.
+
+**Krok 3 — Dla każdego IU wywołaj Agent tool:**
+- `subagent_type` = wartość pola `Delegate to:` z IU (`feature-builder-ui` | `feature-builder-data` | `feature-builder-fullstack`)
+- `prompt` = cały blok IU dosłownie (Cel, Wymagania, Pliki, Podejście, Wzorce, Scenariusze testowe, Weryfikacja) + ścieżka do dokumentacji zadania (`$1`) + numer IU
+
+**Krok 4 — Po otrzymaniu raportu od subagenta zweryfikuj `Status:`**
+
+- `completed` → zaloguj raport w pliku z kontekstem zadania, kontynuuj do kolejnego IU
+- `partial` → przeczytaj `Następne kroki dla orkiestratora`. Jeśli to nowy IU do dodania w planie — zatrzymaj fazę, zaktualizuj plan przez `/dev-plan` lub bezpośredni edit, zaraportuj user'owi. Jeśli to niedokończona praca w obecnym IU — STOP, raportuj user'owi.
+- `blocked` → STOP, przedstaw user'owi pytanie subagenta, czekaj na decyzję.
+
+**Jeśli raport zawiera `Odchylenia od planu:`** (cokolwiek poza "Brak") → zaloguj odchylenie w pliku z kontekstem; jeśli odchylenie zmienia scope (nowe pliki, inne wzorce) — STOP i potwierdź z user'em zanim ruszysz dalej.
 
 ### 3. Wykonaj TYLKO JEDNĄ fazę
 - Sprawdź czy w planie (`docs/plans/`) lub w pliku z planem zadania istnieje sekcja "Granice scope'u" / "Poza zakresem"
 - Jeśli tak → przeczytaj ją i NIE implementuj niczego co jest tam wymienione, nawet jeśli wydaje się przydatne
 - Jeśli zadanie wymaga pracy poza zakresem → STOP, poinformuj użytkownika
-- Jeśli checklist fazy zawiera checkboxy z prefixem `Test:` — traktuj je jako integralną część implementacji fazy. Napisz testy RAZEM z kodem implementacyjnym, nie odkładaj na koniec fazy
 - Checkboxy z prefixem `Weryfikacja:` NIE wykonuj — zostaną zweryfikowane wizualnie w przeglądarce podczas `/dev-docs-review`
-- Realizuj zadania z kolejnej fazy/etapu
+- Realizuj zadania z fazy zgodnie ze strategią delegacji z sekcji 2.5 (Agent tool z `subagent_type` z pola `Delegate to:` IU). Testy są pisane przez subagenta razem z kodem (część jego workflow) — nie zlecaj ich osobno
 - NIE przechodź do następnych faz
 - Zatrzymaj się po ukończeniu tej jednej fazy
 
@@ -120,8 +135,9 @@ Napisz podsumowanie w **prostym języku** zrozumiałym dla osoby nietechnicznej:
 
 🔀 Branch: [nazwa-brancha]
 
-📋 Wykonane zadania:
-   - [lista ukończonych w tej fazie]
+📋 Wykonane Implementation Units:
+   - IU-{N}: {nazwa} → {subagent} → {status}
+   - IU-{N+1}: {nazwa} → {subagent} → {status}
 
 🧪 Testy akceptacyjne: [PASS/FAIL/brak testów]
 
@@ -129,6 +145,9 @@ Napisz podsumowanie w **prostym języku** zrozumiałym dla osoby nietechnicznej:
    - [zrzuty ekranu, logi, inne]
 
 📝 Zaktualizowana dokumentacja w $1/
+
+⚠️ Odchylenia od planu (zgłoszone przez subagentów):
+   - [lub "Brak"]
 
 💾 Commit: feat([nazwa-zadania]): [opis]
 

@@ -30,6 +30,7 @@ Jeśli istnieje plan w `docs/plans/`:
 - Przeczytaj Implementation Unit odpowiadający tej fazie
 - Przekaż każdemu agentowi review: jakie pliki miały być zmienione (Files:), jakie testy miały być napisane (Test scenarios:), jakie wzorce miały być naśladowane (Patterns to follow:)
 - Sprawdź czy Implementation Unit definiował ścieżki plików testowych w sekcji **Pliki: Test:**. Jeśli tak — zweryfikuj czy te pliki istnieją. Brakujący plik testowy zdefiniowany w planie = 🟠 [P2-important] w raporcie "Odchylenia od planu"
+- Sprawdź czy IU miało wypełnione `Delegate to:`. Brak pola w IU sprzed reformy delegacji = ⚪ [info] (legacy plan, nie blokuje review). Niezgodność `Delegate to:` z faktyczną kategorią plików (np. UI files w IU oznaczonym `feature-builder-data`) = 🟡 [P3-nit] z notatką dla planisty
 - Dodaj do raportu sekcję "Odchylenia od planu" jeśli implementacja różni się od planu
 
 Uruchom 5 agentów (Task) równolegle, każdy z inną perspektywą:
@@ -74,7 +75,7 @@ Klasyfikuj znalezione problemy: 🔴 [P1-blocking], 🟠 [P2-important], 🟡 [P
 
 **Agent 5: E2E Browser Verification**
 ```
-Jesteś testerem E2E. Przeczytaj `.claude/agents/e2e-browser-verifier.md` i zastosuj jego metodologię.
+Jesteś testerem E2E. Przeczytaj `.claude/agents/feature-tester-e2e.md` i zastosuj jego metodologię.
 Zbierz niezaznaczone checkboxy `Weryfikacja:` z fazy $2 w pliku zadań $1.
 Zweryfikuj każdy scenariusz wizualnie w przeglądarce przez agent-browser.
 Klasyfikuj: ✅ passed, 🟠 [P2-important] failed.

@@ -3,16 +3,6 @@
     "dev-browser@dev-browser-marketplace": true
   },
   "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/skill-activation-prompt.sh"
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "hooks": [

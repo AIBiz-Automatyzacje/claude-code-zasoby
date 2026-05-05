@@ -272,6 +272,8 @@ Dla każdego unitu dołącz:
 - **Wymagania** — które wymagania lub kryteria sukcesu realizuje
 - **Zależności** — co musi istnieć wcześniej
 - **Pliki** — dokładne ścieżki plików do stworzenia, modyfikacji lub testowania
+- **Delegate to** — subagent wykonujący ten unit (`feature-builder-ui` | `feature-builder-data` | `feature-builder-fullstack`). Reguła decyzyjna w sekcji 3.5.
+- **Skills in play** — lista skilli aktywnych podczas implementacji (mirror frontmatter `skills:` wybranego subagenta). Dokumentacyjne, dla czytelności planu.
 - **Podejście** — kluczowe decyzje, przepływ danych, granice komponentów lub notatki integracyjne
 - **Notatka wykonawcza** — opcjonalna, tylko gdy unit korzysta z niestandardowej postawy wykonawczej jak test-first lub characterization-first
 - **Wzorce do naśladowania** — istniejący kod lub konwencje do odwzorowania
@@ -287,7 +289,21 @@ Używaj `Notatka wykonawcza` oszczędnie. Dobre użycia:
 
 Nie rozwijaj unitów w literalne substepy `RED/GREEN/REFACTOR`.
 
-#### 3.5 Trzymaj niewiadome planistyczne i implementacyjne oddzielnie
+#### 3.5 Wybór subagenta dla IU
+
+Każdy Implementation Unit MUSI mieć zadeklarowany `Delegate to:` — nazwa subagenta z `.claude/agents/`, który go wykona. Reguła decyzyjna oparta na ścieżkach z pola `Pliki:`:
+
+| Ścieżki w `Pliki:` | Subagent | Skille (mirror dla `Skills in play:`) |
+|---|---|---|
+| Tylko `*.tsx` w `src/components/`, `src/features/<x>/components/`, `src/pages/`, lub `*.css` | `feature-builder-ui` | tailwind-react-guidelines, ux-ui-guidelines |
+| Tylko `*.ts` w `src/lib/`, `src/hooks/use<X>Data.ts`, `supabase/migrations/`, `supabase/functions/` | `feature-builder-data` | supabase-dev-guidelines, security |
+| Mix UI i danych w jednym atomowym IU | `feature-builder-fullstack` | tailwind-react-guidelines, ux-ui-guidelines, supabase-dev-guidelines, security |
+
+**Reguła praktyczna:** jeśli da się rozsądnie podzielić na dwa osobne IU (jeden UI, drugi data) — podziel. `feature-builder-fullstack` używaj **tylko** gdy podział byłby sztuczny (np. formularz logowania, gdzie UI bez auth call lub auth call bez formularza są bezużyteczne).
+
+Pole `Skills in play:` jest dokumentacyjnym mirror frontmatter `skills:` wybranego subagenta — pozwala czytelnikowi planu zrozumieć kontekst implementacji bez wchodzenia do pliku subagenta.
+
+#### 3.6 Trzymaj niewiadome planistyczne i implementacyjne oddzielnie
 
 Jeśli coś jest ważne ale jeszcze niepoznawalne, zapisz to explicite pod odroczonymi notatkami implementacyjnymi zamiast udawać że rozwiązujesz to w planie.
 
@@ -409,6 +425,10 @@ origin: docs/brainstorms/YYYY-MM-DD-<topic>-requirements.md  # dołącz gdy plan
 - Test (unit): `ścieżka/do/pliku_testowego`
 - Test (e2e): `Scenariusz: [opis flow do weryfikacji przez /agent-browser]`
 
+**Delegate to:** feature-builder-ui | feature-builder-data | feature-builder-fullstack
+
+**Skills in play:** [lista skilli — mirror frontmatter `skills:` wybranego subagenta]
+
 **Podejście:**
 - [Kluczowa decyzja designu lub sekwencjonowania]
 
@@ -504,6 +524,8 @@ Przed finalizacją sprawdź:
 - Jeśli nie było dokumentu źródłowego, bounded planning bootstrap ustalił wystarczająco dużo jasności produktowej żeby planować odpowiedzialnie
 - Każda główna decyzja jest ugruntowana w dokumencie źródłowym lub researchu
 - Każdy implementation unit jest konkretny, uporządkowany według zależności i gotowy do implementacji
+- Każdy implementation unit ma wypełnione `Delegate to:` zgodnie z regułą decyzyjną z sekcji 3.5
+- Pole `Skills in play:` w każdym IU jest spójne z frontmatter `skills:` wybranego subagenta
 - Jeśli postawa test-first lub characterization-first była explicite lub silnie implikowana, relevantne unity niosą ją dalej z lekką `Notatką wykonawczą`
 - Scenariusze testowe są konkretne bez stawania się kodem testowym
 - Odroczone elementy są explicite i nie ukryte jako fałszywa pewność

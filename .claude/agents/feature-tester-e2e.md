@@ -1,6 +1,7 @@
 ---
-name: e2e-browser-verifier
+name: feature-tester-e2e
 description: "Weryfikuje scenariusze E2E w przeglądarce przez agent-browser. Sprawdza checkboxy Weryfikacja: z checklist zadań — responsywność, interakcje, nawigację klawiaturą, visual regression."
+skills: [agent-browser]
 model: inherit
 ---
 
