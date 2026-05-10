@@ -76,9 +76,12 @@ Klasyfikuj znalezione problemy: 🔴 [P1-blocking], 🟠 [P2-important], 🟡 [P
 **Agent 5: E2E Browser Verification**
 ```
 Jesteś testerem E2E. Przeczytaj `.claude/agents/feature-tester-e2e.md` i zastosuj jego metodologię.
-Zbierz niezaznaczone checkboxy `Weryfikacja:` z fazy $2 w pliku zadań $1.
-Zweryfikuj każdy scenariusz wizualnie w przeglądarce przez agent-browser.
-Klasyfikuj: ✅ passed, 🟠 [P2-important] failed.
+Zbierz niezaznaczone checkboxy `Weryfikacja:` z fazy $2 w pliku zadań $1, które dotyczą scenariuszy w przeglądarce (URL, viewport, kliknięcia, screenshoty, oznaczenie 🌐).
+Pomiń checkboxy CLI (bun run, npm run, grep, tsc itp.) i Manual (operator, symulator, device) — zostaną obsłużone w kroku 4.7.
+Zweryfikuj każdy E2E scenariusz wizualnie przez agent-browser.
+Zwróć USTRUKTURYZOWANY wynik per scenariusz w formacie:
+  - {treść checkboxa} → passed | failed | skipped (z powodem dla skipped)
+Klasyfikuj findingi: ✅ passed, 🟠 [P2-important] failed, ⚪ skipped (np. brak dev servera).
 ```
 
 Po zakończeniu wszystkich agentów — **skonsoliduj wyniki:**
@@ -117,7 +120,46 @@ Na podstawie skonsolidowanego raportu:
 Jeśli Agent 5 wykonał weryfikacje:
 - Dołącz wyniki E2E do skonsolidowanego raportu (sekcja z screenshotami)
 - Nieudane weryfikacje wchodzą do severity gate jako 🟠 [P2-important]
-- Odznaczone `Weryfikacja:` checkboxy w pliku zadań potwierdzają przejście
+- Zachowaj wynik per scenariusz E2E w mapie `{treść checkboxa: passed|failed|skipped}` — krok 4.7 wykorzysta to przy klasyfikacji E2E
+- Krok 4.7 fizycznie odznaczy checkboxy `Weryfikacja:` w pliku zadań (nie odznaczaj ich tutaj)
+
+### 4.7 Bookkeeping checkboxów `Weryfikacja:`
+
+**Cel kroku:** każdy `- [ ] Weryfikacja:` w fazie $2 musi mieć rozstrzygnięcie po review — albo `[x]` (przeszedł), albo `[ ]` z adnotacją kto ma to zrobić. Bez tego kroku trywialne `Weryfikacja: bun run typecheck` zostają wiecznie niezaznaczone mimo że quality gate je potwierdził.
+
+**Krok 1: Re-parsuj plik zadań.** Otwórz `$1/*-zadania.md`, znajdź sekcję fazy $2, wyciągnij wszystkie wciąż niezaznaczone wiersze pasujące do regex `^\s*-\s*\[\s*\]\s*Weryfikacja:`.
+
+**Krok 2: Sklasyfikuj każdy checkbox** — dopasuj treść do jednej z kategorii (kolejność dopasowania od góry, zatrzymaj się na pierwszej pasującej):
+
+| Kategoria | Sygnały w treści checkboxa | Akcja |
+|---|---|---|
+| **CLI** | `bun run`, `npm run`, `pnpm`, `yarn`, `make`, `tsc`, `vitest`, `bun test`, `cargo`, `pytest`, `ruff`, `eslint` | Uruchom komendę przez Bash. Jeśli exit 0 → odznacz `[x]`. Jeśli != 0 → zostaw `[ ]`, dopisz suffix ` (FAIL: <skrót błędu>)` i dodaj wpis do raportu jako 🟠 [P2-important]. |
+| **Grep / istnienie pliku** | `grep`, `rg`, `test -f`, `ls`, "brak referencji do", "plik istnieje", "import nie istnieje" | Uruchom przez Bash. PASS → `[x]`. FAIL → `[ ]` z suffixem ` (FAIL)` i wpis P2. |
+| **E2E browser** | URL, `agent-browser`, "viewport", "kliknij", "screenshot", oznaczenie 🌐 | Sprawdź wynik Agent 5 z mapy zachowanej w 4.6. PASS → `[x]`. FAIL → `[ ]` (P2 już zarejestrowany w 4.6). SKIP → `[ ]` z suffixem ` (SKIP — Agent 5 niedostępny: <powód>)` i wpis P2. |
+| **Manual** | "ręcznie", "operator", "symulator", "device", "emulator", "QA", "tester człowiek" | Zostaw `[ ]`. Dopisz suffix ` — wymaga operatora (checklist)`. NIE dodawaj do P2 — to oczekiwana ręczna weryfikacja. |
+| **Niejasne** | nic z powyższych nie pasuje | Zostaw `[ ]`. Dopisz suffix ` — klasyfikacja niejasna, wymaga ręcznej decyzji`. Dodaj do raportu jako 🟡 [P3-nit] z notatką dla planisty: "checkbox nieautomatyzowalny — rozważ przeniesienie do Operator checklist (dev-plan §3.4) lub przeformułowanie na CLI/E2E". |
+
+**Krok 3: Zaktualizuj plik zadań.** Edytuj `$1/*-zadania.md` przez Edit tool — dla każdego checkboxa zamień `- [ ]` na `- [x]` jeśli PASS, lub dopisz odpowiedni suffix przy `- [ ]` zgodnie z klasyfikacją. Nie modyfikuj checkboxów spoza fazy $2.
+
+**Krok 4: Zaktualizuj raport review.** W `$1/review-faza-$2.md` dopisz sekcję na końcu raportu:
+
+```markdown
+## Bookkeeping checkboxów Weryfikacja:
+
+- Odznaczone automatycznie (CLI/grep): X
+- Odznaczone na podstawie Agent 5 E2E: Y
+- Pozostawione dla operatora (Manual): Z
+- Niejasne (P3): W
+- Failujące (P2): V
+
+### Szczegóły
+- [x] CLI: `<treść>` → PASS (komenda: `<komenda>`)
+- [ ] Manual: `<treść>` — wymaga operatora
+- [ ] Niejasne: `<treść>` — wymaga przeformułowania w planie
+- [ ] FAIL: `<treść>` — `<skrót błędu>` (P2)
+```
+
+**Krok 5: Re-aktualizuj severity gate.** Jeśli krok 2 dodał nowe P2 (CLI FAIL, E2E SKIP, Grep FAIL) lub P3 (niejasne) — zaktualizuj liczniki w raporcie i ponownie zastosuj decyzję severity gate z sekcji 4.5.
 
 ### 5. Przedstaw podsumowanie użytkownikowi
 
@@ -132,6 +174,7 @@ Jeśli Agent 5 wykonał weryfikacje:
    - 🟡 [nit]: X
    - 🔵 [suggestion]: X
    - 🌐 [E2E]: X passed / Y failed
+   - ☑️ Weryfikacja: X auto / Y E2E / Z manual / W niejasne / V failed
 
 📄 Raport zapisany: $1/review-faza-$2.md
 
