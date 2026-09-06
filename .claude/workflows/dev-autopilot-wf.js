@@ -53,7 +53,12 @@ const FINDING_OTWARTY = {
   type: 'object',
   additionalProperties: false,
   properties: {
-    severity: { type: 'string', enum: ['P1', 'P2'] },
+    // 'P3' doszlo 2026-09-06 (audyt N2). Plan B1 (commit 3007df4) wpuscil P3 typu KOD/TEST do petli
+    // naprawczej przez `otwartePoReview`, ale ten enum zostal na ['P1','P2'] — rozjazd producenta
+    // ze schematem. W JEDNYM runie bug byl niewidoczny (fix czyta `faza.otwarteFindingi` z pamieci),
+    // ale przy WZNOWIENIU miedzy runami stan idzie przez bootstrap-agenta i te findingi znikaly.
+    // Dowod z produkcji: oferty-online, STOP na fazie 6 zapisal 13 P3, swiezy run ich nie zobaczyl.
+    severity: { type: 'string', enum: ['P1', 'P2', 'P3'] },
     typ: { type: 'string', enum: ['KOD', 'TEST', 'E2E'] },
     plik: { type: 'string' },
     opis: { type: 'string' },
@@ -99,6 +104,30 @@ const METRYKI_FAZY = {
         e2ePass: { type: ['integer', 'null'] },
         e2eFail: { type: ['integer', 'null'] },
         e2eSkip: { type: ['integer', 'null'] },
+        // Metryki kosztu review (audyt 2026-09-06, N3) — tez poza `required`, bo stany sprzed tej
+        // daty ich nie maja, a bootstrap przepisuje stan 1:1 przez ten schemat. Bez nich progi
+        // "efekt dossier" i "batchowanie sceptykow" byly niemierzalne: `additionalProperties: false`
+        // wymazywal te pola przy PIERWSZYM zapiszStan, wiec do telemetrii nie mialy jak dojsc.
+        // `dossier: false` = cichy fallback do czytania pelnych dokumentow, nieodrozniany od sukcesu.
+        dossier: { type: ['boolean', 'null'], description: 'czy packager zbudowal dossier fazy (false = reviewerzy czytali pelne dokumenty)' },
+        sceptycy: {
+          type: ['object', 'null'],
+          additionalProperties: false,
+          properties: {
+            p1: { type: ['integer', 'null'], description: 'liczba agentow-sceptykow P1 (3 na finding)' },
+            p2Grupy: { type: ['integer', 'null'], description: 'liczba agentow-sceptykow P2 po batchowaniu per plik' },
+            p2Findingi: { type: ['integer', 'null'], description: 'liczba findingow P2 poddanych verify' },
+          },
+        },
+        severityKorekty: {
+          type: ['object', 'null'],
+          additionalProperties: false,
+          properties: {
+            przyjete: { type: ['integer', 'null'], description: 'korekty severity przyjete (zgodna wiekszosc sceptykow)' },
+            odrzucone: { type: ['integer', 'null'], description: 'sugestie pojedynczego sceptyka odrzucone przez regule (plan A7)' },
+          },
+        },
+        tiery: { type: ['object', 'null'], additionalProperties: { type: ['string', 'null'] }, description: 'tier rozumowania per rola (plan B4)' },
       },
       required: ['pominieci', 'znalezione', 'poDedupJs', 'poDedupSem', 'weryfikowane', 'obalone'],
     },
@@ -516,7 +545,17 @@ Numer fazy: ${numerFazy}
 OTWARTE FINDINGI DO NAPRAWY (lista autorytatywna — przekazana przez orkiestratora):
 ${JSON.stringify(otwarteFindingi, null, 2)}
 
-Pelny kontekst kazdego findingu: ${sciezka}/review-faza-${numerFazy}.md.
+FINDINGI Z PREFIKSEM "[z przerwanego review tej fazy — potwierdz, czy nadal aktualny]": to findingi
+z POPRZEDNIEGO podejscia do tej fazy, ktore zatrzymalo sie na awarii srodowiska (nie na jakosci kodu).
+Biezacy przebieg reviewerow ich NIE potwierdzil — mogl ich nie znalezc, ale kod mogl tez zostac
+w miedzyczasie zmieniony. Przy kazdym takim findingu NAJPIERW otworz wskazany plik i sprawdz, czy
+defekt nadal tam jest. Jesli JEST — napraw normalnie, wg klasyfikacji nizej. Jesli GO NIE MA (kod
+juz poprawiony, plik usuniety, opis nieaktualny) — NIE wymuszaj zmiany: policz go jako zamkniety
+i napisz w raporcie jednym zdaniem, ze defekt nie wystepuje. Nigdy nie zgaduj — sprawdz w pliku.
+
+Pelny kontekst kazdego findingu: ${sciezka}/review-faza-${numerFazy}.md
+(uwaga: findingi przeniesione opisano w raporcie z POPRZEDNIEGO podejscia, wiec ich pelnej tresci
+moze tam nie byc — wtedy zrodlem jest opis z listy powyzej).
 Checkboxy w sekcji "Do poprawy po review fazy ${numerFazy}" w ${sciezka}/*-zadania.md odznaczaj
 w miare napraw (to widok dla czlowieka).
 
@@ -720,6 +759,11 @@ Po poprawkach: pelna walidacja (typecheck, test, build — komendy z package.jso
 \`fix([nazwa]): kontrola diffu naprawczego fazy ${numerFazy}\` z jawnym pathspec zmienionych plikow
 (ZAKAZ \`git add -A\` i \`git add .\`). Gdy ktorejs pozycji NIE da sie zamknac bez ruszania kodu spoza tej
 fazy — zostaw ja i opisz w nienaprawione[]; to nie jest bramka blokujaca faze.
+BILANS MUSI SIE ZGADZAC: naprawione + liczba wpisow w nienaprawione[] == liczba pozycji z listy. Kazda
+pozycja, ktorej nie naprawiles, MA swoj wpis w nienaprawione[] w formacie "<plik:linia> — <jedno zdanie,
+co stoi na przeszkodzie>" (np. "rzutowanie na granicy zewnetrznego SDK, dubler klienta Supabase").
+Orkiestrator liczy roznice i pozycje bez sladu wypisuje jako ostrzezenie — "PASS" walidacji nie
+zastepuje uzasadnienia.
 ${BLOK_DLUGIE_KOMENDY}
 
 Zwroc {naprawione, pozostaje, walidacja, nierozwiazaneP1: 0, nierozwiazaneP2: 0, plikiBinarne, p3Pominiete: [], nienaprawione}.`
@@ -842,6 +886,42 @@ function otwartePoReview(findings) {
     .map((f) => ({ severity: f.severity, typ: f.typ, plik: f.plik, opis: f.opis }))
 }
 
+// Scalenie findingow, gdy faza jest reviewowana PONOWNIE (audyt 2026-09-06, N2).
+//
+// Bloker srodowiska i pad testera E2E zostawiaja `faza.review = 'pending'` CELOWO: findingi E2E
+// powstaly na zepsutym srodowisku i po naprawie wymagaja swiezego werdyktu. Ale powtorka nadpisywala
+// cala liste, wiec razem z ocena E2E przepadala ocena KODU — a ta z awaria srodowiska nie miala nic
+// wspolnego. W oferty-online (faza 6) kosztowalo to 11 findingow P3 typu KOD/TEST przy jednym STOP-ie.
+//
+// Zasada: powtarzamy ocene SRODOWISKA, nie ocene kodu. Findingi typu E2E z poprzedniego podejscia
+// odpadaja (tester wystawi nowe), reszta wraca na liste oznaczona jako przeniesiona.
+function polaczFindingiPoPowtorce(nowe, poprzednie) {
+  const swieze = nowe || []
+  const doPrzeniesienia = (poprzednie || []).filter((f) => f.typ !== 'E2E')
+  if (!doPrzeniesienia.length) return swieze
+
+  // Dedup po pliku ORAZ tresci: w jednym pliku bywa wiele osobnych defektow, wiec sam plik to za
+  // grube sito. Poczatek opisu wystarcza — reviewer opisujacy ten sam defekt zaczyna tak samo,
+  // a rozne defekty rozjezdzaja sie w pierwszym zdaniu.
+  const kluczem = (f) => `${f.plik}|${(f.opis || '').slice(0, 60).toLowerCase()}`
+  const juzJest = new Set(swieze.map(kluczem))
+
+  const przeniesione = doPrzeniesienia
+    .filter((f) => !juzJest.has(kluczem(f)))
+    .map((f) => ({
+      severity: f.severity,
+      typ: f.typ,
+      plik: f.plik,
+      // Oznaczenie jest istotne dla fixa i dla raportu: agent ma wiedziec, ze tego findingu NIE
+      // potwierdzil biezacy przebieg reviewerow, wiec najpierw sprawdza, czy defekt nadal istnieje.
+      opis: `[z przerwanego review tej fazy — potwierdz, czy nadal aktualny] ${f.opis}`,
+    }))
+  if (przeniesione.length) {
+    log(`Powtorka review: przenosze ${przeniesione.length} finding(ow) z przerwanego podejscia (E2E pominiete — tester wystawil swiezy werdykt)`)
+  }
+  return [...swieze, ...przeniesione]
+}
+
 // ── Orkiestracja ──────────────────────────────────────────────────────────
 
 // Sanityzacja args — UI wstrzykuje prefix '@' (mention) i czesto trailing '/'.
@@ -892,6 +972,47 @@ function skrotPrzebiegu(p) {
     e2ePass: p.e2ePass ?? null,
     e2eFail: p.e2eFail ?? null,
     e2eSkip: p.e2eSkip ?? null,
+    // Metryki kosztu review (audyt 2026-09-06, N3). Do tej pory review-wf je liczyl, ale ta funkcja
+    // ich NIE przepisywala — a to ona decyduje, co wchodzi do stanu i do wpisu JSONL. Bez nich
+    // telemetria pokazywala `dossier: undefined` we wszystkich fazach i progi 2 oraz pozycje A7/B4
+    // planu naprawy nie mialy na czym stanac. null = przebieg ze starszego runu, ktory tego nie zna.
+    dossier: p.dossier ?? null,
+    sceptycy: p.sceptycy
+      ? { p1: p.sceptycy.p1 ?? null, p2Grupy: p.sceptycy.p2Grupy ?? null, p2Findingi: p.sceptycy.p2Findingi ?? null }
+      : null,
+    severityKorekty: p.severityKorekty
+      ? { przyjete: p.severityKorekty.przyjete ?? null, odrzucone: p.severityKorekty.odrzucone ?? null }
+      : null,
+    tiery: p.tiery || null,
+  }
+}
+
+// Skrot `e2eSync` do telemetrii (audyt 2026-09-06, N6). `raporty[].e2eSync` niesie PELNY raport agenta
+// db-sync — to celowe, bo `raporty` wracaja do operatora w wyniku runu i w STOP-ie, a tekst bywa cenny
+// ("Storage odrzuca klucz sb_secret_ podany tylko jako Bearer, dziala z naglowkiem apikey"). Ale w JSONL
+// ten sam tekst zajmowal 35-45% wpisu (3 335 z 7 450 B), a analiza telemetrii potrzebuje statusu, nie
+// instrukcji dla czlowieka. Pelna tresc zostaje w logu runu (log przy wywolaniu db-sync) i w wyniku.
+const E2E_SYNC_LIMIT_TELEMETRII = 200
+function skrotE2eSync(tekst) {
+  if (typeof tekst !== 'string' || tekst.length <= E2E_SYNC_LIMIT_TELEMETRII) return tekst
+  return `${tekst.slice(0, E2E_SYNC_LIMIT_TELEMETRII).trimEnd()}… [uciete: ${tekst.length} znakow, pelna tresc w logu runu]`
+}
+
+// Podsumowanie tury poprawkowej po kontroli diffu naprawczego (audyt 2026-09-06, N9).
+// Do tej pory do stanu i telemetrii szlo tylko {pozycje, naprawione, walidacja} — a agent poprawki
+// podaje w nienaprawione[] uzasadnienia pozycji, ktorych nie ruszyl, i orkiestrator je WYRZUCAL.
+// Dowod: oferty-online faza 5 — 61 pozycji, 55 naprawionych, walidacja PASS; commit opisuje 4 swiadome
+// wyjatki (granica zewnetrznego SDK), wiec 2 pozycje nie mialy zadnego sladu. `bezSladu` to dokladnie
+// ta luka: policzona deterministycznie, zeby PASS przy 55/61 nie udawal PASS przy 61/61.
+function podsumujKontroleFixa(pozycje, poprawka) {
+  const pominiete = Array.isArray(poprawka.nienaprawione) ? poprawka.nienaprawione.filter((x) => typeof x === 'string' && x.trim()) : []
+  const naprawione = Number.isInteger(poprawka.naprawione) ? poprawka.naprawione : 0
+  return {
+    pozycje,
+    naprawione,
+    walidacja: poprawka.walidacja,
+    pominiete,
+    bezSladu: Math.max(0, pozycje - naprawione - pominiete.length),
   }
 }
 
@@ -908,7 +1029,7 @@ async function zapiszTelemetrie(status, powod) {
   const raportyTelemetrii = ((stan && stan.fazy) || [])
     .map((f) => {
       const zRunu = raporty.find((r) => r.faza === f.numer)
-      if (zRunu) return { ...zRunu, zrodlo: 'run' }
+      if (zRunu) return { ...zRunu, e2eSync: skrotE2eSync(zRunu.e2eSync), zrodlo: 'run' }
       if (!f.metryki) return null
       return {
         faza: f.numer,
@@ -1208,6 +1329,10 @@ for (const numerFazy of kolejka) {
     // Etap "review" obejmuje e2e db-sync + review-wf (reviewerzy, dedup, adversarial verify) — to jeden
     // blok warunkowy i jeden wywolywany workflow, wiec i jedna pozycja w atrybucji.
     const tokEtapStart = tokSpent()
+    // Findingi z PRZERWANEGO podejscia do tej fazy (STOP na blokerze srodowiska albo padzie testera
+    // E2E zostawia review=pending z niepusta lista). Zapamietane PRZED review, bo `faza.otwarteFindingi`
+    // zaraz zostanie nadpisane wynikiem nowego przebiegu — patrz polaczFindingiPoPowtorce (audyt N2).
+    const findingiPrzedPowtorka = faza.otwarteFindingi.slice()
     // Sync bazy e2e per faza PO execute (migracje fazy powstaja w execute, db push jest
     // przyrostowy — brak nowych migracji = no-op). Niepowodzenie nie blokuje review:
     // tester E2E trafi na brak danych i sklasyfikuje OPERATOR, a detal (np. blad SQL
@@ -1249,7 +1374,7 @@ for (const numerFazy of kolejka) {
       // wychodzila przed zapisem metryk, wiec STOP na blokerze zostawial w stanie i telemetrii `null`
       // zamiast licznikow — praca 8 reviewerow znikala. `faza.review` CELOWO zostaje `pending`:
       // findingi E2E powstaly na zepsutym srodowisku i po naprawie wymagaja powtorki.
-      faza.otwarteFindingi = otwartePoReview(review.findings)
+      faza.otwarteFindingi = polaczFindingiPoPowtorce(otwartePoReview(review.findings), findingiPrzedPowtorka)
       faza.metryki = { liczniki: policzFindingi(review.findings), przebieg: skrotPrzebiegu(review.przebieg) }
       await zapiszStan()
       return await stopRun({
@@ -1265,6 +1390,13 @@ for (const numerFazy of kolejka) {
     // w przegladarce faza z E2E nie ma dowodu, a cicha degradacja do OPERATOR to dokladnie regresja etap-11/12b.
     // (po blokerze srodowiska: bloker to konkretniejsza diagnoza z instrukcja naprawy; oba zostawiaja review pending)
     if (review.e2eTesterFail) {
+      // Utrwal dorobek reviewerow, tak samo jak galaz blokera srodowiska (audyt 2026-09-06, N2).
+      // Do tej pory ta sciezka robila samo `zapiszStan()`: metryki i findingi zostawaly w pamieci runu
+      // i ginely razem z nim, wiec pad TESTERA kasowal ocene KODU, ktora z przegladarka nie miala nic
+      // wspolnego — ta sama szkoda, ktora plan A2 naprawil, ale tylko dla blokera srodowiska.
+      // `faza.review` zostaje `pending` (bez przebiegu w przegladarce faza z E2E nie ma dowodu).
+      faza.otwarteFindingi = polaczFindingiPoPowtorce(otwartePoReview(review.findings), findingiPrzedPowtorka)
+      faza.metryki = { liczniki: policzFindingi(review.findings), przebieg: skrotPrzebiegu(review.przebieg) }
       await zapiszStan()
       return await stopRun({
         powod: `Faza ${numerFazy}: tester E2E (agent-browser) ${(review.przebieg && review.przebieg.e2eStatus) || 'padl 2x'} przy ${review.przebieg && review.przebieg.e2eLiczbaZnana ? `${review.przebieg.e2eCheckboxy} checkboxach [E2E]` : 'nieznanej liczbie checkboxow [E2E] (packager kontekst:diff tez padl — szukaj 529/watchdoga, nie przegladarki)'}. Nie degraduje cicho do OPERATOR: review pozostaje pending.`,
@@ -1291,7 +1423,7 @@ for (const numerFazy of kolejka) {
     // Skrot zgodny z METRYKI_FAZY: same liczby do strojenia progow. Pelny przebieg (flagi warstw,
     // lista aktywnych) zostaje w raporcie review-faza-N.md, zeby nie puchl plik stanu.
     faza.metryki = { liczniki, przebieg: skrotPrzebiegu(przebiegFazy) }
-    faza.otwarteFindingi = otwartePoReview(review.findings)
+    faza.otwarteFindingi = polaczFindingiPoPowtorce(otwartePoReview(review.findings), findingiPrzedPowtorka)
     faza.fix = faza.otwarteFindingi.length ? 'pending' : 'none'
     await zapiszStan()
     dopiszEtap('review', tokEtapStart)
@@ -1408,8 +1540,11 @@ for (const numerFazy of kolejka) {
       if (!poprawka) {
         log(`Faza ${numerFazy}: tura poprawkowa zwrocila null — pozycje zostaja otwarte, faza idzie dalej (P3-klasa, nie bramka)`)
       } else {
-        kontrolaFixa = { pozycje: doPoprawki.length, naprawione: poprawka.naprawione, walidacja: poprawka.walidacja }
-        log(`Faza ${numerFazy}: tura poprawkowa — naprawiono ${poprawka.naprawione}/${doPoprawki.length}, walidacja ${poprawka.walidacja}`)
+        kontrolaFixa = podsumujKontroleFixa(doPoprawki.length, poprawka)
+        log(`Faza ${numerFazy}: tura poprawkowa — naprawiono ${poprawka.naprawione}/${doPoprawki.length}, walidacja ${poprawka.walidacja}${kontrolaFixa.pominiete.length ? `, pominiete z uzasadnieniem: ${kontrolaFixa.pominiete.length}` : ''}`)
+        if (kontrolaFixa.bezSladu > 0) {
+          log(`Faza ${numerFazy}: UWAGA — ${kontrolaFixa.bezSladu} pozycji kontroli diffu ani nie naprawiono, ani nie uzasadniono w nienaprawione[]. Walidacja ${poprawka.walidacja} nie mowi nic o tych pozycjach; sprawdz commit "kontrola diffu naprawczego fazy ${numerFazy}".`)
+        }
         // Walidacja FAIL po turze poprawkowej JEST bramka: zostawilibysmy faze z niedzialajacym typecheckiem
         // albo czerwonymi testami, a nastepna faza budowalaby na tym.
         if (poprawka.walidacja === 'FAIL') {

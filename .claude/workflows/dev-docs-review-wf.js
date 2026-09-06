@@ -618,6 +618,41 @@ ${BLOK_DLUGIE_KOMENDY}${BLOK_LIMIT_P3}${mapaBlok(kontekst)}${rereviewBlok(poprze
 }
 
 // Gotowy blok markdown dla raportu — liczby policzone w JS, scribe wkleja 1:1 (nie przelicza).
+// Formatery metryk kosztu review (audyt 2026-09-06, N3). Do 2026-09-06 `dossier`, `sceptycy`,
+// `severityKorekty` i `tiery` byly liczone, ale nie wychodzily poza zywy log workflowu — nie bylo ich
+// ani w tej tabeli, ani w stanie, ani w telemetrii. Skutek: dwa z trzech progow alarmowych planu
+// naprawy (efekt dossier, batchowanie sceptykow) byly NIEMIERZALNE, a `dossier: false` — czyli cichy
+// fallback do czytania pelnych dokumentow — wygladal w danych identycznie jak sukces.
+// Kazdy formater toleruje brak pola: przebieg ze starszego runu ich nie ma i ma to byc widoczne
+// jako "brak danych", nie jako zero.
+function dossierOpis(d) {
+  // Trzy stany, nie dwa. `false` znaczy "packager probowal i nie zapisal dossier" — to realny sygnal,
+  // ze reviewerzy czytali pelne dokumenty. Brak pola znaczy tylko "nie mierzono" (przebieg ze starszego
+  // runu) i NIE wolno go raportowac jako fallback: raport oskarzalby pipeline o cos, czego nie zmierzono.
+  if (d === true) return 'TAK — reviewerzy czytali dossier'
+  if (d === false) return 'NIE — fallback: pelne dokumenty (drozej)'
+  return 'brak danych'
+}
+
+function sceptycyOpis(s) {
+  if (!s) return 'brak danych'
+  const oszczednosc = Number.isInteger(s.p2Findingi) && Number.isInteger(s.p2Grupy) && s.p2Findingi > 0
+    ? ` (batchowanie: ${s.p2Findingi} findingow w ${s.p2Grupy} agentach)`
+    : ''
+  return `${s.p1 ?? '?'} / ${s.p2Grupy ?? '?'} / ${s.p2Findingi ?? '?'}${oszczednosc}`
+}
+
+function korektyOpis(k) {
+  if (!k) return 'brak danych'
+  return `${k.przyjete ?? '?'} / ${k.odrzucone ?? '?'}`
+}
+
+function tieryOpis(t) {
+  if (!t) return 'brak danych'
+  const wpisy = Object.keys(t).map((k) => `${k}=${t[k] || 'sesji'}`)
+  return wpisy.length ? wpisy.join(', ') : 'brak danych'
+}
+
 function przebiegBlok(p) {
   const pom = p.pominieci.length ? p.pominieci.map((x) => `${x.key} (${x.powod})`).join('; ') : 'brak — pelny sklad'
   const w = p.warstwy
@@ -637,7 +672,11 @@ function przebiegBlok(p) {
 | Reviewerzy pominieci | ${pom} |
 | Findingi: znalezione -> dedup JS -> dedup semantyczny | ${p.znalezione} -> ${p.poDedupJs} -> ${p.poDedupSem} |
 | P3 odrzucone limitem globalnym | ${p.p3Odrzucone || 0} |
-| Adversarial verify: weryfikowane / obalone / bez glosow | ${p.weryfikowane} / ${p.obalone} / ${p.niezweryfikowane} |`
+| Adversarial verify: weryfikowane / obalone / bez glosow | ${p.weryfikowane} / ${p.obalone} / ${p.niezweryfikowane} |
+| Dossier fazy | ${dossierOpis(p.dossier)} |
+| Sceptycy: P1 (3 glosy) / P2 grupy / P2 findingi | ${sceptycyOpis(p.sceptycy)} |
+| Severity ruszone przez sceptykow: przyjete / odrzucone | ${korektyOpis(p.severityKorekty)} |
+| Tiery rozumowania | ${tieryOpis(p.tiery)} |`
 }
 
 // Ostrzezenie o niepotwierdzonych checkboxach wisi na `e2eTryb`, a NIE na `aktywni.includes('e2e')`
