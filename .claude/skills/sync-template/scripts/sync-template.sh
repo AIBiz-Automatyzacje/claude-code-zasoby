@@ -56,7 +56,10 @@ MANIFEST_FILE="$PROJECT_DIR/$MANAGED_ROOT/.template-manifest"
 
 # --- Przygotuj źródło (klon albo lokalna ścieżka) ---
 TMP_CLONE=""
-cleanup() { [[ -n "$TMP_CLONE" && -d "$TMP_CLONE" ]] && rm -rf "$TMP_CLONE"; }
+# `return 0` na końcu jest istotne: funkcja biegnie z trapu EXIT, więc jej kod wyjścia
+# NADPISUJE kod wyjścia skryptu. Bez tego przy TEMPLATE_LOCAL_SRC (pusty TMP_CLONE)
+# nieudany test `[[ -n "" ]]` zamieniał udany sync w exit 1.
+cleanup() { [[ -n "$TMP_CLONE" && -d "$TMP_CLONE" ]] && rm -rf "$TMP_CLONE"; return 0; }
 trap cleanup EXIT
 
 if [[ -n "$LOCAL_SRC" ]]; then
@@ -165,6 +168,40 @@ if [[ "${#ADD[@]}" -eq 0 && "${#UPDATE[@]}" -eq 0 && "${#REMOVE[@]}" -eq 0 ]]; t
   printf '%s\n' "${MANAGED[@]}" > "$MANIFEST_FILE"
   echo "APPLIED: brak różnic w plikach — zaktualizowano tylko marker wersji."
   exit 0
+fi
+
+# --- Bramka składni workflowów (audyt 2026-09-06, N1) ---
+# Powód: commit 5775b79 wniósł do szablonu nieescapowany backtick wewnątrz template
+# literala w dev-docs-execute-wf.js. Plik przestał być poprawnym ESM, więc runtime
+# NIE rejestrował workflowu — a autopilot padał dopiero przy wejściu w fazę 1 na
+# "no workflow with that name", po całym bootstrapie. Sync roznosił ten defekt do
+# każdego projektu, a dwa z nich diagnozowały go niezależnie.
+# Sprawdzamy ŹRÓDŁO przed apply: zepsuty workflow ma tu nie wejść do projektu.
+# `node --check` się nie nadaje (workflowy mają `return` na górnym poziomie), więc
+# parsujemy tak jak runtime: opakowane w funkcję async, bez wykonania.
+if command -v node >/dev/null 2>&1; then
+  WF_ZLE=""
+  for rel in "${ADD[@]+"${ADD[@]}"}" "${UPDATE[@]+"${UPDATE[@]}"}"; do
+    case "$rel" in
+      "$MANAGED_ROOT"/workflows/*.js) ;;
+      *) continue ;;
+    esac
+    if ! node -e '
+      const fs = require("fs"), vm = require("vm");
+      const src = fs.readFileSync(process.argv[1], "utf8").replace(/^export\s+const\s/m, "const ");
+      new vm.Script("(async () => {\n" + src + "\n})()", { filename: process.argv[1] });
+    ' "$SRC/$rel" 2>/dev/null; then
+      WF_ZLE="$WF_ZLE  $rel"$'\n'
+    fi
+  done
+  if [[ -n "$WF_ZLE" ]]; then
+    echo "BŁĄD: workflow(y) w szablonie nie parsują się — NIE aplikuję zmian."
+    printf '%s' "$WF_ZLE"
+    echo "Runtime nie zarejestrowałby tych workflowów, a błąd wyszedłby dopiero przy ich wywołaniu."
+    echo "Najczęstsza przyczyna: nieescapowany backtick albo \${...} w treści promptu wewnątrz template literala."
+    echo "Napraw w repo szablonu i ponów sync. Projekt pozostaje nietknięty."
+    exit 1
+  fi
 fi
 
 # --- Backup nadpisywanych/usuwanych plików (ścieżka odwrotu) ---

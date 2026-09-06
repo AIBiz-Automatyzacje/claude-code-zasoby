@@ -65,6 +65,13 @@ Skrypt wypisuje ustrukturyzowany raport, który streszczasz userowi po polsku:
   Przekaż userowi stderr z git i zasugeruj `gh auth login` / sprawdzenie sieci.
   **Nie** ponawiaj w kółko tej samej komendy.
 - `BŁĄD: brak 'git' w PATH` → git nie jest zainstalowany; zgłoś to userowi.
+- `BŁĄD: workflow(y) w szablonie nie parsują się` → w **szablonie** jest plik
+  `.claude/workflows/*.js`, którego runtime by nie zarejestrował. Skrypt nie
+  zaaplikował **niczego**, projekt jest nietknięty. To defekt po stronie szablonu, nie
+  projektu: przekaż userowi listę plików ze stdout i powiedz, że naprawa idzie do repo
+  szablonu (`node --test '.claude/workflows/__tests__/skladnia-workflowow.test.mjs'`
+  odtwarza to lokalnie). **Nie obchodź tego** kopiowaniem plików ręcznie — zepsuty
+  workflow milczy aż do pierwszego wywołania, a wtedy autopilot pada w środku fazy.
 
 Nie modyfikuj skryptu „w locie", żeby obejść błąd konfiguracji — zdiagnozuj przyczynę.
 

@@ -190,7 +190,7 @@ ${BLOK_DLUGIE_KOMENDY}
    checkboxa z markerem [E2E]/[Manual] — "Test: [E2E]" to URUCHOMIENIE flow przez testera review, nie jego
    napisanie; odznacza go scribe review po PASS w przegladarce. Napisany seed e2e/seeds/*.sql odhaczasz WYLACZNIE
    w checkboxie implementacyjnym "Stwórz (e2e seed):").
-3. Aktualizuj ${sciezka}/*-kontekst.md: zmiany i decyzje tej fazy dopisz do sekcji `## Dziennik`
+3. Aktualizuj ${sciezka}/*-kontekst.md: zmiany i decyzje tej fazy dopisz do sekcji \`## Dziennik\`
    (jedna sekcja, chronologicznie) plus "Ostatnia aktualizacja". NIE zakladaj w tym pliku sekcji
    "Decyzje techniczne", "Kluczowe pliki", "Odroczone do implementacji" ani "Wzorce do nasladowania" —
    plik kontekstu ich nie ma od 2026-09-03 i nie ma ich odtwarzac. Decyzja korygujaca plan idzie
