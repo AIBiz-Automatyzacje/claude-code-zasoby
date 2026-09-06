@@ -224,6 +224,19 @@ for rel in "${ADD[@]+"${ADD[@]}"}";       do copy_in "$rel"; done
 for rel in "${UPDATE[@]+"${UPDATE[@]}"}"; do copy_in "$rel"; done
 for rel in "${REMOVE[@]+"${REMOVE[@]}"}"; do rm -f "$PROJECT_DIR/$rel"; done
 
+# --- Sprzątnij katalogi opróżnione przez REMOVE (audyt 2026-09-06, N8) ---
+# Usunięcie skilla ze szablonu kasowało jego SKILL.md, ale zostawiało pusty
+# katalog .claude/skills/<nazwa>/ — widmo mylące przy `ls`. Wspinamy się od
+# katalogu pliku w górę, aż do $MANAGED_ROOT; `rmdir` odmawia na niepustym
+# katalogu, więc nigdy nie usunie niczego, co zawiera lokalne pliki projektu.
+prune_empty_dirs() {
+  local d="$(dirname "$PROJECT_DIR/$1")" stop="$PROJECT_DIR/$MANAGED_ROOT"
+  while [[ "$d" != "$stop" && "$d" == "$stop"/* ]] && rmdir "$d" 2>/dev/null; do
+    d="$(dirname "$d")"
+  done
+}
+for rel in "${REMOVE[@]+"${REMOVE[@]}"}"; do prune_empty_dirs "$rel"; done
+
 # --- Zaktualizuj marker wersji i manifest ---
 printf '%s\n' "$UPSTREAM_SHA" > "$VERSION_FILE"
 printf '%s\n' "${MANAGED[@]}" > "$MANIFEST_FILE"
