@@ -16,8 +16,9 @@ Sami na tym budujemy własne aplikacje w Akademii Automatyzacji. Po skopiowaniu 
 - **Pomaga doprecyzować, CO budujesz** - zanim powstanie linijka kodu, przepyta Cię
   o wymagania i rozpisze plan techniczny.
 - **Implementuje fazami i sam sprawdza swoją robotę** - każdą fazę przegląda **do 7** niezależnych
-  agentów-reviewerów (bezpieczeństwo, wydajność, architektura, testy), a skład dobiera pod domenę
-  fazy: projekt bez ani jednego `.ts` nie płaci za reviewera typów. Błędy naprawia.
+  agentów-reviewerów (bezpieczeństwo, wydajność, jakość kodu, poprawność wykonania, zgodność ze
+  specyfikacją, testy, E2E). Faza bez ani jednego pliku kodu nie płaci za reviewerów kodu, a faza
+  bez scenariusza `[E2E]` nie budzi testera przeglądarki. Błędy naprawia.
 - **Zapamiętuje wnioski** - rozwiązane problemy trafiają do `docs/solutions/`, więc
   w kolejnych zadaniach nie wpada na te same miny.
 
@@ -45,8 +46,9 @@ Zaczynasz od pomysłu, kończysz na działającej, sprawdzonej aplikacji. Po dro
 - **Pełna dokumentacja techniczna w dwóch dokumentach** - Dev Plan (plan techniczny
   z `/dev-plan`) i DevDocs (dokumentacja wykonawcza z `/dev-docs`: plan, kontekst, lista
   zadań), aktualizowane na bieżąco w trakcie implementacji.
-- **Review robi do 7 niezależnych agentów naraz** (bezpieczeństwo, wydajność, architektura,
-  zgodność ze specyfikacją, prostota, testy) - **skład zależy od domeny fazy**, więc reviewer bez
+- **Review robi do 7 niezależnych agentów naraz** (bezpieczeństwo, wydajność, jakość kodu — jedna
+  persona z trzema osiami: granice i struktura, YAGNI, bezpieczeństwo typów — poprawność wykonania,
+  zgodność ze specyfikacją, testy, E2E) - **skład zależy od domeny fazy**, więc reviewer bez
   materiału do pracy się nie odpala. Każde poważne znalezisko przechodzi jeszcze przez
   agenta-sceptyka, który próbuje je obalić. Zostają tylko prawdziwe błędy.
 - **Sterowanie trzyma kod, nie model** - kolejność faz, bramki jakości i limity napraw są
@@ -185,7 +187,7 @@ Część pipeline'u to **deterministyczne orkiestratory w JavaScript** w `.claud
 **`/dev-docs-execute docs/active/[nazwa]`** *(workflow: `dev-docs-execute-wf`)* — wykonanie jednej fazy. Każdy IU delegowany do buildera przez `agentType` (pole `Delegate to:` w IU): `feature-builder-ui` | `feature-builder-data` | `feature-builder-fullstack`. Strategia serial (zależne) / parallel (niezależne). Dla IU dotykających UI doklejany mandatory kontekst designerski. Na końcu: System-Wide Test Check, checkboxy, incremental commits.
 
 **`/dev-docs-review docs/active/[nazwa] [faza]`** *(workflow: `dev-docs-review-wf` — skill jest cienkim wrapperem wołającym workflow)* — code review fazy. context-packager (mapa zmian + flagi warstw + **dossier fazy**, żeby reviewerzy nie czytali ośmiokrotnie tych samych dokumentów) → **do 7 reviewerów równolegle** (Security, Performance, Code-quality, Correctness, Spec-compliance, Test-coverage, E2E) → dedup → **adversarial verify** każdego P1/P2 (sceptycy próbują obalić finding; **P1 = 3 niezależnych sceptyków z konsensusem 2/3, P2 = jeden sceptyk na grupę findingów z tego samego pliku**) → scribe zapisuje raport + `## Przebieg review` + bookkeeping checkboxów `Weryfikacja:` → severity gate (P1 blokuje / P2 zastrzeżenia / P3 OK).
-- **Routing domenowy:** rdzeń (Security, Spec-compliance, Simplicity, Test-coverage) odpala się zawsze; Performance / Architecture / TypeScript / E2E tylko gdy faza tyka ich domeny — np. projekt bez ani jednego `.ts` nie płaci za reviewera typów. Tester przeglądarki odpala się po **policzonej pracy**, nie po warstwie: potrzebuje niezaznaczonego checkboxa `[E2E]` albo makiet `figma_screens` do visual diffu, więc faza UI bez ani jednego scenariusza go nie budzi. Gdy packager nie zwróci flag → pełny skład (fail-open). Pominięcie E2E blokuje odznaczanie browserowych checkboxów `Weryfikacja:` (idą do Operator checklist).
+- **Routing domenowy:** rdzeń (`security`, `spec-compliance`, `test-coverage`) odpala się zawsze; `code-quality` i `correctness` — gdy faza ma choć jeden plik kodu; `performance` — gdy dotyka warstwy danych albo ma ≥5 plików kodu. **W praktyce faza z kodem dostaje pełny skład** — pomijany bywa tylko tester E2E; routing przycina wyłącznie fazy czysto dokumentacyjne (audyt 2026-09-06: w 10 fazach dwóch projektów jedynym pominiętym był `e2e`). Osobne reviewery architektury, prostoty i typów nie istnieją od 2026-09-03 — to trzy osie wewnątrz `code-quality` (konsolidacja B12; `architecture-strategist` i `code-simplicity-reviewer` zostały w repo na wypadek odwrotu). Tester przeglądarki odpala się po **policzonej pracy**, nie po warstwie: potrzebuje niezaznaczonego checkboxa `[E2E]` albo makiet `figma_screens` do visual diffu, więc faza UI bez ani jednego scenariusza go nie budzi. Gdy packager nie zwróci flag → pełny skład (fail-open). Pominięcie E2E blokuje odznaczanie browserowych checkboxów `Weryfikacja:` (idą do Operator checklist).
 - **Myk E2E:** `feature-tester-e2e` testuje w **prawdziwej przeglądarce** (agent-browser) na dev serverze Vite (`localhost:5173`), nie w headless symulacji. Preflight: `curl localhost:5173`. Zwraca **jawny przebieg per checkbox `[E2E]`** (`przebiegi[]` PASS/FAIL/SKIP z dowodem, oba prefiksy `Test:`/`Weryfikacja:`) i **nie pisze do pliku zadań** — odznacza scribe, wyłącznie z wpisu PASS. Przy `figma_screens` robi side-by-side visual diff z mockupami (manualna akceptacja = finding OPERATOR, nie auto-checkbox). Bez `.env.e2e` weryfikacje E2E lądują jako OPERATOR (do ręcznego sprawdzenia).
 
 **`/dev-docs-update docs/active/[nazwa]`** — zapis stanu przed kompaktowaniem kontekstu. Commituje WIP, aktualizuje 3 pliki zadania, dokumentuje niedokończoną pracę.

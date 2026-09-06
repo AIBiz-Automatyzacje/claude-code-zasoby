@@ -698,6 +698,21 @@ ${JSON.stringify(obalone || [], null, 2)}
 Referencja procedury: .claude/skills/dev-docs-review/SKILL.md sekcje 4, 4.5, 4.7.
 
 1. Zapisz ${sciezka}/review-faza-${faza}.md — pelny raport (findings posortowane P1->P2->P3, statystyki).
+   FORMAT NAGLOWKOW JEST STALY — skopiuj DOKLADNIE, nie wymyslaj wlasnego (audyt 2026-09-06: dziesiec
+   raportow jednego pipeline'u mialo PIEC roznych konwencji i nie dalo sie ich zagregowac bez recznego parsera):
+     ## Findingi P1
+     ### P1 · KOD · \`sciezka/plik.ts:123\`
+     ## Findingi P2
+     ### P2 · TEST · \`sciezka/plik.test.ts:45\`
+     ## Findingi P3
+     ### P3 · KOD · \`sciezka/plik.ts:7\`
+     ## Findingi OPERATOR
+     ### OPERATOR · \`sciezka/plik.sql:20\`
+   Czyli: sekcja "## Findingi <SEVERITY>" (zawsze wszystkie cztery, pusta = jedna linia "Brak."), a pod nia
+   kazdy finding jako "### <SEVERITY> · <TYP> · \`<plik:linia>\`" — separator to spacja, srodkowa kropka (·),
+   spacja; typ to KOD | TEST | E2E; OPERATOR bez typu. BEZ numeracji ("1."), BEZ emoji, BEZ nawiasow
+   kwadratowych, BEZ "P2-1". Tresc findingu pod naglowkiem; sugestie sceptykow zapisuj w tresci ZAWSZE
+   w postaci "*(sceptyk sugerowal P3 — utrzymane P2)*". Wzorzec w SKILL.md sekcja 4 jest ten sam.
 1b. W tym samym raporcie, PO liscie findingow a PRZED blokiem "## Przebieg review" z punktu 7
    (ten blok musi zostac OSTATNI — po nim orkiestrator poznaje, ze zapis sie domknal),
    dopisz sekcje "## Obalone przez verify (nie do naprawy)"

@@ -44,19 +44,36 @@ Jeśli istnieje plan w `docs/plans/`:
 ### 4. Zapisz wyniki review
 Po zakończeniu review przez subagenta:
 
-**Utwórz plik `$1/review-faza-$2.md`** z pełnym raportem. Umieść w nim **osobną sekcję `## Zgodność ze spec`** z wynikami Agenta 6 — NIE scalaj jej z findings osi Standards (osie pozostają rozdzielone, by jedna nie maskowała drugiej).
+**Utwórz plik `$1/review-faza-$2.md`** z pełnym raportem. Format nagłówków jest **stały** — ten sam
+wzorzec dostaje scribe w `dev-docs-review-wf.js` i ten sam parsuje każda agregacja przez fazy:
+
+```markdown
+## Findingi P1
+### P1 · KOD · `sciezka/plik.ts:123`
+(treść findingu; sugestia sceptyka zawsze jako *(sceptyk sugerował P3 — utrzymane P2)*)
+
+## Findingi P2
+### P2 · TEST · `sciezka/plik.test.ts:45`
+
+## Findingi P3
+Brak.
+
+## Findingi OPERATOR
+### OPERATOR · `sciezka/plik.sql:20`
+```
+
+Zawsze cztery sekcje `## Findingi <SEVERITY>` (pusta = linia „Brak."), pod nimi
+`### <SEVERITY> · <TYP> · \`<plik:linia>\`` — typ to `KOD | TEST | E2E`, OPERATOR bez typu.
+Bez numeracji, emoji, nawiasów kwadratowych ani wariantów typu `P2-1`. Powód: audyt 2026-09-06 znalazł
+**pięć** konwencji w dziesięciu raportach jednego pipeline'u — dorobku review nie dało się policzyć bez
+ręcznego parsera. Findingi zgodności ze spec **nie** dostają osobnej sekcji — są zwykłymi findingami
+z cytatem ID wymagania w treści.
 
 **Zaktualizuj `$1/[zadanie]-zadania.md`:**
-- Dodaj sekcję "## Do poprawy po review fazy $2"
-- Wylistuj wszystkie 🔴 i 🟠 problemy jako **checkboxy** (nie bullet points!):
-```markdown
-  ## Do poprawy po review fazy $2
-
-  - [ ] 🔴 [blocking] **plik:linia** — opis problemu
-  - [ ] 🟠 [important] **plik:linia** — opis problemu
-  - [ ] 🟡 [nit] **plik:linia** — opis (opcjonalne)
-```
-- Format musi być spójny z pozostałymi zadaniami w pliku
+- Sekcja „## Do poprawy po review fazy $2" — checkboxy P1/P2 typu KOD/TEST/E2E oraz P3 typu KOD/TEST
+  (P3 idą do fixa od 2026-09-03). Po zamknięciu fazy cyklem fix sekcja jest **zwijana** do jednej linii
+  („Zamknięte cyklem fix: N pozycji — pełna treść w `review-faza-$2.md`"), a niezaznaczone pozycje zostają.
+- Sekcja „## Operator checklist faza $2" — findingi OPERATOR jako `- [ ] Operator: <treść> — Operator action: <kroki>`.
 
 **Zaktualizuj `$1/[zadanie]-kontekst.md`:**
 - Dodaj notatkę o przeprowadzonym review
